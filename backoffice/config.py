@@ -12,7 +12,7 @@ DATABASE_URL = os.environ.get(
 # Adresse de la Product API fournie (conteneur Docker, port 5001).
 PRODUCT_API_URL = os.environ.get("PRODUCT_API_URL", "http://localhost:5001")
 
-# Clé qui signe le cookie de session. À changer hors de ta machine !
+# Clé qui signe le cookie de session.
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev-only-change-me")
 
 # Mot de passe de l'admin créé par init_db.py (jamais stocké en clair).

@@ -27,12 +27,6 @@ import config
 import product_client
 from models import Base, Branch, Stock, User
 
-# TODO: remove this fallback once config.py defines PRODUCT_API_URL.
-if not hasattr(config, "PRODUCT_API_URL"):
-    config.PRODUCT_API_URL = os.environ.get(
-        "PRODUCT_API_URL", "http://localhost:5001"
-    )
-
 ADMIN_USERNAME = "admin"
 ADMIN_PASSWORD_ENV = "HBNTORY_ADMIN_PASSWORD"
 
