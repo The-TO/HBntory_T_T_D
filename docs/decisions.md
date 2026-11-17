@@ -19,5 +19,3 @@ pros there is a bit of wait for the response of the server before any other acti
 -No extra port, nothing to secure on the network, the simplest transport.
 			Trade-off:
 -One MCP process is started per question (about one second slower) , and the MCP server must be on the same machine as the AI service.
-
-##
