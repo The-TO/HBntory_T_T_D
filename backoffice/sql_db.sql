@@ -1,0 +1,26 @@
+CREATE TABLE branches (
+    id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    address VARCHAR(255),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+);
+
+CREATE TABLE users (
+    id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'common_user')),
+    branch_id INTEGER REFERENCES branches(id),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
+);
+
+
+CREATE TABLE stocks (
+    id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    branch_id INTEGER NOT NULL REFERENCES branches(id),
+    product_id VARCHAR(64) NOT NULL,
+    quantity INTEGER NOT NULL CHECK (quantity >= 0),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_stock_branch_product UNIQUE (branch_id, product_id)
+);
