@@ -37,7 +37,7 @@ erDiagram
        int id PK
        string username UK "Unique username"
        string password_hash "Hashed Password"
-       string role "admin or common user"
+       string role "admin or common"
        int branch_id FK "NULL for admin"
        datetime created_at "Creation date"
        datetime deleted_at "NULL = active"
