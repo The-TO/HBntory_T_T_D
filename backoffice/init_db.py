@@ -14,8 +14,6 @@ d'environnement HBNTORY_ADMIN_PASSWORD.
 import os
 from datetime import datetime, timezone
 
-from flask import Flask
-
 from db import db, init_db
 from models import Branch, Stock, User
 

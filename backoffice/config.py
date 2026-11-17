@@ -1,18 +1,19 @@
-"""Tout les Reglages du backoffice au meme endroit, lus depuis les variables d'environnement."""
+"""tout les Réglages du Backoffice en un seul endroit, lus depuis les variables d'environnement."""
 import os
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_DB_PATH = os.path.join(BASE_DIR, "..", "data", "hbntory.db")
 
-#__file__ = chemin du fichier config.py
-# os.path.abspath(...) = le transforme en chemin complet, par exemple /user/theo/hntory/.../config.py
-#os.path.dirname = retiens que le dossier 
-#os.path.join(BASE_DIR, "..", "data", "hbntory.db") = remonte d'un dossier(..) puis descend dans data/ : Users/.../hbntory.db
-
-
-
-# Adresse de la base de données (SQLite par defaut : un simple fichier).
-
+# Adresse de la base de données (SQLite par défaut : un simple fichier).
 DATABASE_URL = os.environ.get(
-    "DATABASE_URL"
+    "DATABASE_URL", "sqlite:///" + os.path.abspath(DEFAULT_DB_PATH)
 )
+
+# Adresse de la Product API fournie (conteneur Docker, port 5001).
+PRODUCT_API_URL = os.environ.get("PRODUCT_API_URL", "http://localhost:5001")
+
+# Clé qui signe le cookie de session. À changer hors de ta machine !
+SECRET_KEY = os.environ.get("SECRET_KEY", "dev-only-change-me")
+
+# Mot de passe de l'admin créé par init_db.py (jamais stocké en clair).
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin1234")
