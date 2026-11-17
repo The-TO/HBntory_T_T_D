@@ -59,3 +59,75 @@ flowchart LR
     BO -->|HTTP GET| API[External Product API<br>Docker :5001]
     MCP -->|HTTP GET| API
 ```
+
+## User diagram
+
+```mermaid
+classDiagram
+    class User {
+        +id: int
+        +username: str
+        +password_hash: str
+        +role: UserRole
+        +branch_id: int
+        +deleted_at: datetime
+    }
+
+    class Branch {
+        +id: int
+        +name: str
+    }
+
+    class Stock {
+        +id: int
+        +branch_id: int
+        +product_id: str
+        +quantity: int
+    }
+
+    class AuthService {
+        +login()
+        +get_current_user()
+        +hash_password()
+    }
+
+    class StockService {
+        +get_branch_stock()
+        +add_stock()
+        +remove_stock()
+    }
+
+    class UserService {
+        +create_user()
+        +update_user()
+        +soft_delete_user()
+    }
+
+    class ProductApiClient {
+        +list_products()
+        +get_product()
+    }
+
+    class McpServer {
+        +list_products()
+        +get_product()
+        +get_branch_stock()
+        +check_purchase_availability()
+    }
+
+    class AiQueryService {
+        +ask_question()
+    }
+
+    User "1" --> "1" Branch
+    Branch "1" --> "*" Stock
+    Stock "*" --> "1" ProductApiClient : product_id
+
+    AuthService --> User
+    UserService --> User
+    StockService --> Stock
+    StockService --> ProductApiClient
+    McpServer --> ProductApiClient
+    McpServer --> Stock
+    AiQueryService --> McpServer
+```
