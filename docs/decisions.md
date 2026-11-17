@@ -1,21 +1,27 @@
-# HBntory - Decision record
+# HBntory – Decision Record
 
+## Backoffice: Server-Side Rendering (SSR)
 
-## Backoffice: Server-side-rendering: 
-   		Benefits:
-- Because it’s an all in one program instead than REST + html/css/js. There’s a need of at least 2 projects.
--The server side authentication is easier.
-			Trade-off:
--The interface is less dynamic and the page needs a reload each time there’s a change.
+**Benefits:**
+- It is an all-in-one application, instead of REST + HTML/CSS/JS, which would require at least two separate projects (backend and frontend).
+- Server-side authentication is easier to implement.
 
-## Client Web: REST:
-			Benefits
--Because there is no need for an extended conversation for an FAQ.
-			Trade-off:
-pros there is a bit of wait for the response of the server before any other action can be done
+**Trade-off:**
+- The interface is less dynamic, and the page needs to reload each time something changes.
 
-## Ai Query Service to MCP tools: STDIO:
-			Benefits
--No extra port, nothing to secure on the network, the simplest transport.
-			Trade-off:
--One MCP process is started per question (about one second slower) , and the MCP server must be on the same machine as the AI service.
+## Client Web to AI Query Service: REST
+
+**Benefits:**
+- Each question is independent and no conversation history is needed, so a simple request/response is enough.
+- It is simple to implement and to test.
+
+**Trade-off:**
+- The user has to wait for the complete answer, since there is no streaming.
+
+## AI Query Service to MCP tools: STDIO
+
+**Benefits:**
+- No extra port and nothing to secure on the network, since it is the simplest transport.
+
+**Trade-off:**
+- One MCP process is started per question (about one second slower), and the MCP server must run on the same machine as the AI service.
