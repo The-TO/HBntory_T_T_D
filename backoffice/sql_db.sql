@@ -16,11 +16,11 @@ CREATE TABLE users (
 );
 
 
-CREATE TABLE stocks (
+CREATE TABLE stock (
     id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     branch_id INTEGER NOT NULL REFERENCES branches(id),
     product_id VARCHAR(64) NOT NULL,
     quantity INTEGER NOT NULL CHECK (quantity >= 0),
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT uq_stock_branch_product UNIQUE (branch_id, product_id)
 );
