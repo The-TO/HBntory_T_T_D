@@ -16,4 +16,4 @@ PRODUCT_API_URL = os.environ.get("PRODUCT_API_URL", "http://localhost:5001")
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev-only-change-me")
 
 # Mot de passe de l'admin créé par init_db.py (jamais stocké en clair).
-ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin1234")
+ADMIN_PASSWORD = os.environ.get("HBNTORY_ADMIN_PASSWORD")
