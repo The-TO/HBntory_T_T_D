@@ -1,174 +1,167 @@
 """
-Script d'initialisation de la base de données HBntory.
+Initialize the HBntory database.
 
-Crée :
-- les tables ;
-- deux branches ;
-- un administrateur ;
-- un stock d'exemple.
+Creates:
+- the tables (from models.py);
+- two branches;
+- the admin user (password hashed with bcrypt);
+- sample stock, built from the real products of the Product API.
 
-Le mot de passe administrateur peut être défini avec la variable
-d'environnement HBNTORY_ADMIN_PASSWORD.
+The script can be run several times: existing rows are not duplicated.
+
+Usage (from the backoffice/ folder):
+    HBNTORY_ADMIN_PASSWORD='choose-a-password' python init_db.py
+
+The admin password is never written in the code: it is read from the
+HBNTORY_ADMIN_PASSWORD environment variable and only its bcrypt hash is saved.
 """
 
 import os
-from datetime import datetime, timezone
+import sys
 
-from flask import Flask
+import bcrypt
+from sqlalchemy import create_engine, event
+from sqlalchemy.orm import Session
 
-from db import db, init_db
-from models import Branch, Stock, User
+import config
+import product_client
+from models import Base, Branch, Stock, User
 
+# TODO: remove this fallback once config.py defines PRODUCT_API_URL.
+if not hasattr(config, "PRODUCT_API_URL"):
+    config.PRODUCT_API_URL = os.environ.get(
+        "PRODUCT_API_URL", "http://localhost:5001"
+    )
 
 ADMIN_USERNAME = "admin"
-ADMIN_EMAIL = "admin@hbntory.local"
-ADMIN_ROLE = "admin"
-DEFAULT_ADMIN_PASSWORD = "admin123"
+ADMIN_PASSWORD_ENV = "HBNTORY_ADMIN_PASSWORD"
 
-BRANCHES = [
-    {
-        "id": 1,
-        "name": "Main Campus",
-        "address": "12 Main Street",
-    },
-    {
-        "id": 2,
-        "name": "North Campus",
-        "address": "48 North Avenue",
-    },
-]
+BRANCH_NAMES = ["Main Campus", "North Campus"]
 
-SAMPLE_STOCK = [
-    {"product_id": 1, "branch_id": 1, "quantity": 12},
-    {"product_id": 2, "branch_id": 1, "quantity": 8},
-    {"product_id": 3, "branch_id": 1, "quantity": 15},
-    {"product_id": 5, "branch_id": 1, "quantity": 25},
-    {"product_id": 6, "branch_id": 1, "quantity": 30},
-    {"product_id": 9, "branch_id": 1, "quantity": 10},
-    {"product_id": 12, "branch_id": 1, "quantity": 6},
-    {"product_id": 15, "branch_id": 1, "quantity": 18},
-    {"product_id": 1, "branch_id": 2, "quantity": 7},
-    {"product_id": 3, "branch_id": 2, "quantity": 9},
-    {"product_id": 5, "branch_id": 2, "quantity": 14},
-    {"product_id": 6, "branch_id": 2, "quantity": 20},
-    {"product_id": 9, "branch_id": 2, "quantity": 5},
-    {"product_id": 12, "branch_id": 2, "quantity": 4},
-    {"product_id": 15, "branch_id": 2, "quantity": 11},
-]
+# Quantity per product, in the order returned by the Product API.
+# None = the branch does not hold this product (availability differs per branch).
+SAMPLE_QUANTITIES = {
+    "Main Campus": [12, 8, 15, 25, 30, 10, 6, 18],
+    "North Campus": [7, None, 9, 14, 20, None, 5, 11],
+}
 
 
-def utc_now():
-    """Retourne la date et l'heure actuelles en UTC."""
-    return datetime.now(timezone.utc)
+def make_engine():
+    """Create the SQLAlchemy engine (SQLite file by default)."""
+    if config.DATABASE_URL:
+        url = config.DATABASE_URL
+    else:
+        db_path = os.path.abspath(config.DEFAULT_DB_PATH)
+        os.makedirs(os.path.dirname(db_path), exist_ok=True)
+        url = "sqlite:///" + db_path
+
+    engine = create_engine(url)
+
+    if engine.dialect.name == "sqlite":
+        # SQLite ignores foreign keys unless this is enabled on each connection.
+        @event.listens_for(engine, "connect")
+        def enable_foreign_keys(dbapi_connection, _record):
+            cursor = dbapi_connection.cursor()
+            cursor.execute("PRAGMA foreign_keys=ON")
+            cursor.close()
+
+    return engine
 
 
-def create_app():
-    """Crée une application Flask minimale pour initialiser la base."""
-    app = Flask(__name__)
-
-    project_root = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "..")
-    )
-
-    data_dir = os.path.join(project_root, "data")
-    os.makedirs(data_dir, exist_ok=True)
-
-    database_path = os.path.join(data_dir, "hbntory.db")
-    database_url = f"sqlite:///{database_path}"
-
-    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
-    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
-    init_db(app)
-
-    return app
+def hash_password(password):
+    """Return the bcrypt hash of a password (salt included in the hash)."""
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
-def create_admin():
-    """Crée l'administrateur initial."""
-    admin_password = os.environ.get(
-        "HBNTORY_ADMIN_PASSWORD",
-        DEFAULT_ADMIN_PASSWORD,
-    )
+def create_branches(session):
+    """Create the initial branches and return them by name."""
+    branches = {}
 
-    existing_admin = User.query.filter_by(
-        username=ADMIN_USERNAME
-    ).first()
+    for name in BRANCH_NAMES:
+        branch = session.query(Branch).filter_by(name=name).first()
+        if branch is None:
+            branch = Branch(name=name)
+            session.add(branch)
+            print(f"Branch created: {name}")
+        else:
+            print(f"Branch already exists: {name}")
+        branches[name] = branch
 
-    if existing_admin:
-        print("L'administrateur existe déjà.")
+    session.commit()
+    return branches
+
+
+def create_admin(session):
+    """Create the admin user (no branch) if it does not exist yet."""
+    if session.query(User).filter_by(username=ADMIN_USERNAME).first():
+        print("Admin already exists.")
         return
+
+    password = os.environ.get(ADMIN_PASSWORD_ENV)
+    if not password:
+        sys.exit(
+            f"Admin not created: set the {ADMIN_PASSWORD_ENV} environment "
+            "variable and run this script again."
+        )
 
     admin = User(
         username=ADMIN_USERNAME,
-        email=ADMIN_EMAIL,
-        password=admin_password,
-        role=ADMIN_ROLE,
-        is_active=True,
-        created_at=utc_now(),
+        password_hash=hash_password(password),
+        role="admin",
+        branch_id=None,
     )
-
-    db.session.add(admin)
-    db.session.commit()
-
-    print("Administrateur créé.")
+    session.add(admin)
+    session.commit()
+    print("Admin created.")
 
 
-def create_branches():
-    """Crée les branches initiales."""
-    for branch_data in BRANCHES:
-        existing_branch = Branch.query.filter_by(
-            id=branch_data["id"]
-        ).first()
-
-        if existing_branch:
-            print(f"La branche '{branch_data['name']}' existe déjà.")
-            continue
-
-        branch = Branch(
-            id=branch_data["id"],
-            name=branch_data["name"],
-            address=branch_data["address"],
+def create_sample_stock(session, branches):
+    """Create sample stock using the real SKUs of the Product API."""
+    try:
+        products = product_client.list_products()
+    except product_client.ProductAPIError as error:
+        print(
+            f"Sample stock skipped: Product API unavailable ({error}). "
+            "Start the Product API and run this script again."
         )
-
-        db.session.add(branch)
-
-    db.session.commit()
-    print("Branches initialisées.")
-
-
-def create_sample_stock():
-    """Crée un stock d'exemple pour tester l'application."""
-    if Stock.query.count() > 0:
-        print("Le stock contient déjà des données.")
         return
 
-    for stock_data in SAMPLE_STOCK:
-        stock = Stock(
-            product_id=stock_data["product_id"],
-            branch_id=stock_data["branch_id"],
-            quantity=stock_data["quantity"],
-            updated_at=utc_now(),
-        )
+    skus = [product["sku"] for product in products]
+    if not skus:
+        print("Sample stock skipped: the Product API returned no products.")
+        return
 
-        db.session.add(stock)
+    created = 0
+    for branch_name, quantities in SAMPLE_QUANTITIES.items():
+        branch = branches[branch_name]
+        for sku, quantity in zip(skus, quantities):
+            if quantity is None:
+                continue
+            existing = (
+                session.query(Stock)
+                .filter_by(branch_id=branch.id, product_id=sku)
+                .first()
+            )
+            if existing:
+                continue
+            session.add(Stock(branch_id=branch.id, product_id=sku, quantity=quantity))
+            created += 1
 
-    db.session.commit()
-    print(f"{len(SAMPLE_STOCK)} entrées de stock créées.")
+    session.commit()
+    print(f"Sample stock: {created} line(s) created.")
 
 
 def main():
-    """Point d'entrée du script d'initialisation."""
-    app = create_app()
+    """Entry point of the initialization script."""
+    engine = make_engine()
+    Base.metadata.create_all(engine)
 
-    with app.app_context():
-        db.create_all()
+    with Session(engine) as session:
+        branches = create_branches(session)
+        create_admin(session)
+        create_sample_stock(session, branches)
 
-        create_branches()
-        create_admin()
-        create_sample_stock()
-
-    print("Initialisation de la base terminée.")
+    print("Database initialization finished.")
 
 
 if __name__ == "__main__":
