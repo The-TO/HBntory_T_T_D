@@ -15,5 +15,5 @@ def hash_password(password):
 def verify_password(password, password_hash):
     """renvoie True si le mot de passe correspond au hash stocké."""
     return bcrypt.checkpw(
-        password.encode("utf-8"), password_hash.encode("uft-8")
+        password.encode("utf-8"), password_hash.encode("utf-8")
     )
