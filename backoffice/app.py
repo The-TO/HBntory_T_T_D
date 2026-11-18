@@ -8,7 +8,7 @@ from db import db_session
 
 def create_app():
     app = Flask(__name__)
-    app.config("SECRET_KEY") = config.SECRET_KEY
+    app.config["SECRET_KEY"] = config.SECRET_KEY
 
     # Le cookie de session n'est pas lisible par JS
 
@@ -16,7 +16,8 @@ def create_app():
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
 
-    @app.route("/"):
+    @app.route("/")
+
     @auth.login_required
     def home():
         """Chaque rôle est envoyé vers SA page"""
@@ -38,4 +39,4 @@ def create_app():
 
 
 if __name__ == "__main__":
-     create_app().run(port=5000, debug=True)
+     create_app().run(port=5002, debug=True)
