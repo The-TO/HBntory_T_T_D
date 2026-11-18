@@ -58,7 +58,7 @@ def create_app():
     @app.errorhandler(403)
     def forbidden(error):
         """Connecté, mais le rôle ne permet pas cette action."""
-        return render_template("403.html"), 403
+        return "Forbidden: you do not have permission to do this.", 403
 
     @app.teardown_appcontext
     def close_session(exception=None):

@@ -31,7 +31,7 @@ The branch is never read from the URL or from a form. A common user therefore ca
 
 ## Responses
 
-- **401 Unauthorized**: nobody is logged in.
+- **401 Unauthorized**: the backend raises 401, and the application redirects the visitor to the login page.
 - **403 Forbidden**: the user is logged in but does not have the right role.
 
 ## Tests
