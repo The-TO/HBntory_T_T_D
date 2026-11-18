@@ -8,8 +8,7 @@
 - AI Model → Understand questions, execute MCP Tools and return answers
 - MCP Server → Receive AI service calls and request data from the Product API and Database
 - Product API → Read-Only data source on docker
-- Database → SQLite relational database with products informations and user informations.
-
+- Database → SQLite relational database with users, branches and stock quantities (no product details)
 
 
 ## 2. The responsibility of each service ?
@@ -21,27 +20,36 @@
 - Product API → Provide product data (Read-Only)
 - AI Model → Local LLM used to understand natural language and write answers
 
-
 ## 3. How the services communicate with each other ?
 
-- Client Web → AI Service: REST Request
-	- AI Service  → Server MCP: Tool Calls
-	- Server MCP →  Product API: HTTP Request
-	- Server MCP → Data Base: Read-Only
-	- Backoffice →  Data Base: Read + Write
-	- Backoffice → Product API: HTTP Request
+- Client Web → AI Service: REST Request (HTTP)
+- AI Service → MCP Server: Tool Calls (MCP over stdio)
+- MCP Server → Product API: HTTP Request
+- MCP Server → Database: SQL (Read-Only)
+- Backoffice → Database: SQL via SQLAlchemy (Read + Write)
+- Backoffice → Product API: HTTP Request
 
 ## 4. Which data is stored locally ?
 
-- Users data (Username, password hashed, role, branch)
-- Stock (ID, Quantity, Branch)
+- Users (username, password hash, role, branch, deleted status)
+- Branches
+- Stock (branch, product_id, quantity)
+- Only the product_id is stored for products, never the product details
 
 
 ## 5. Which data comes from the external Product API ?
 
 - Products informations (ID, sku, name, description, category, brand, supplier_id, supplier_name, unit_price, currency, discontinued, weight_kg, tags) 
 
+- The SKU (`sku`) is the identifier we store locally as `product_id`, it is the only link between our database and the Product API
+
 ## 6. How the AI agent will access product and stock information ?
+
+- The agent has no direct access to the database or to the Product API, it only uses the MCP tools
+- Product information: `list_products` and `get_product`, which call the Product API
+- Stock information (read-only): `get_branch_stock`, `check_purchase_availability`, and a tool for the stock of one product across all branches (name to be defined)
+- The MCP Server reads the database with read-only SQL, and the AI Service starts it as a subprocess (stdio)
+- Answers must only use the tool results: if the information is not available, the answer says so
 
 
 
@@ -119,7 +127,7 @@ classDiagram
         +ask_question()
     }
 
-    User "1" --> "1" Branch
+    User "*" --> "0..1" Branch
     Branch "1" --> "*" Stock
     Stock "*" --> "1" ProductApiClient : product_id
 
