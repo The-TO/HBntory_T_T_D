@@ -4,6 +4,9 @@ import os
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_DB_PATH = os.path.join(BASE_DIR, "..", "data", "hbntory.db")
 
+# SQLite ne crée pas le dossier : on s'assure qu'il existe.
+os.makedirs(os.path.dirname(os.path.abspath(DEFAULT_DB_PATH)), exist_ok=True)
+
 # Adresse de la base de données (SQLite par défaut : un simple fichier).
 DATABASE_URL = os.environ.get(
     "DATABASE_URL", "sqlite:///" + os.path.abspath(DEFAULT_DB_PATH)
