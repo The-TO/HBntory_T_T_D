@@ -13,3 +13,5 @@
 - Plain text: anyone who reads the database (leak, backup, SQL injection) gets every password immediately.
 - Plain SHA256: it is a fast general-purpose hash. An attacker with a graphics card can try billions of candidates per second. Without salt, two users with the same password have the same hash, and precomputed tables (rainbow tables) work.
 - bcrypt is slow on purpose (cost factor 12 = 4096 rounds) and salted: each guess is expensive and must be redone for each user.
+
+
