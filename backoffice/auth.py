@@ -2,7 +2,6 @@
 import hashlib
 import secrets
 from datetime import datetime, timedelta, timezone
-from functools import wraps
 
 from db import db_session
 from models import User, UserSession
@@ -108,19 +107,3 @@ def logout(token):
         UserSession.token_hash == _hash_token(token or "")
     ).delete()
     db_session.commit()
-
-
-def login_required(func):
-    """Décorateur pour toute fonction d'entrée du Backoffice.
-
-    La fonction décorée est appelée avec (token, ...) et reçoit (user, ...) :
-        @login_required
-        def my_action(user, ...): ...
-    """
-
-    @wraps(func)
-    def wrapped(token, *args, **kwargs):
-        user = require_user(token)
-        return func(user, *args, **kwargs)
-
-    return wrapped
