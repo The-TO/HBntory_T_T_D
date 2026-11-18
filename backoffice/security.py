@@ -2,13 +2,11 @@
 
 import bcrypt
 
+
 def hash_password(password):
-    """Transforme un mot de passe en hash bcrupt (texte à stocker)"""
-
-    salt = bcrypt.gensalt()   #sel aléatoire, différent à chaque appel
-
+    """Transforme un mot de passe en hash bcrypt (texte à stocker)"""
+    salt = bcrypt.gensalt()   # sel aléatoire, différent à chaque appel
     hashed = bcrypt.hashpw(password.encode("utf-8"), salt)
-
     return hashed.decode("utf-8")
 
 
