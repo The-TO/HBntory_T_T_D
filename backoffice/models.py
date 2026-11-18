@@ -67,3 +67,15 @@ class Stock(Base):
     quantity = Column(Integer, nullable=False, default=0)
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now(), nullable=False)
     branch = relationship("Branch", back_populates="stock_items")
+
+class UserSession(Base):
+    """Session d'authentification côté serveur (on ne stocke que le hash du jeton)."""
+
+    __tablename__ = "user_sessions"
+
+    id = Column(Integer, primary_key=True)
+    token_hash = Column(String(64), unique=True, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime, nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    user = relationship("User")
