@@ -14,7 +14,8 @@ from sqlalchemy import (
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
-
+ROLE_ADMIN = "admin"
+ROLE_COMMON = "common"
 
 class Branch(Base):
     """Represent a branch and its related users and stock items."""
@@ -50,6 +51,15 @@ class User(Base):
     deleted_at = Column(DateTime, nullable=True)
     branch = relationship("Branch", back_populates="users")
 
+    @property
+    def is_admin(self):
+        """True si cet utilisateur est l'admin"""
+        return self.role == ROLE_ADMIN
+
+    @property
+    def is_deleted(self):
+        """True si le compte à été supprimé (soft delete)"""
+        return self.deleted_at is not None
 
 class Stock(Base):
     """Represent a product's quantity at a branch."""
@@ -67,3 +77,15 @@ class Stock(Base):
     quantity = Column(Integer, nullable=False, default=0)
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now(), nullable=False)
     branch = relationship("Branch", back_populates="stock_items")
+
+class UserSession(Base):
+    """Session d'authentification côté serveur (on ne stocke que le hash du jeton)."""
+
+    __tablename__ = "user_sessions"
+
+    id = Column(Integer, primary_key=True)
+    token_hash = Column(String(64), unique=True, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime, nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    user = relationship("User")
