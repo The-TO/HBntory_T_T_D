@@ -19,7 +19,7 @@ HBNTORY_ADMIN_PASSWORD environment variable and only its bcrypt hash is saved.
 import os
 import sys
 
-import bcrypt
+from security import hash_password
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session
 
@@ -60,11 +60,6 @@ def make_engine():
             cursor.close()
 
     return engine
-
-
-def hash_password(password):
-    """Return the bcrypt hash of a password (salt included in the hash)."""
-    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
 def create_branches(session):
