@@ -9,6 +9,15 @@
 **Trade-off:**
 - The interface is less dynamic, and the page needs to reload each time something changes.
 
+**How the Backoffice is organized:**
+- Flask renders every page with Jinja templates (`backoffice/templates/`).
+- Pages are grouped by role in two Blueprints: `stock_routes.py` (`/stock/...`, common users) and `routes_admin.py` (`/admin/...`, admin only). Login and logout are in `app.py`.
+- Every route starts by checking the role on the server with `permissions.py` (`require_role`, `current_branch_id`). Hiding a button in the page is never the protection.
+- For stock operations, the branch always comes from the logged-in user, never from the form.
+- Routes do not contain the business rules: they call `stock_service.py` and `user_service.py`, which validate the data (positive quantity, enough stock, existing branch, password length...).
+- Each form is sent with POST. The route shows a success or error message with `flash`, then redirects to the page, so refreshing the page never sends the form twice.
+- Product information is never stored locally: it is read from the Product API through `product_client.py`.
+
 ## Client Web to AI Query Service: REST
 
 **Benefits:**

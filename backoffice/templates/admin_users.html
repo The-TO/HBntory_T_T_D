@@ -1,6 +1,13 @@
 {% block title %}Users - HBntory{% endblock %}
 {% block content %}
 <h1>Users</h1>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% for category, message in messages %}
+<p class="{{ category }}">{{ message }}</p>
+{% endfor %}
+{% endwith %}
+
 <p><a class="button" href="{{ url_for('admin.new_user') }}">Create a user</a></p>
 <table>
   <thead>
