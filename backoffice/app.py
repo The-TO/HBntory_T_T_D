@@ -21,6 +21,8 @@ def create_app():
         user = permissions.require_login()
         # TODO Task 3 : envoyer l'admin vers la gestion des utilisateurs
         # et les utilisateurs communs vers la page du stock.
+        if user.role == "admin":
+            return redirect(url_for("admin.users"))
         if user.role == "common":
             return redirect(url_for("stock.index"))
         return "Connected as %s (%s)" % (user.username, user.role)
