@@ -48,14 +48,14 @@ def create_user(username, password, branch_id):
         raise UserError("this username is already taken")
     _check_password(password)
     branch = _check_branch(branch_id)
-    user = User(username=username, role=ROLE_COMMON, branch.id=branch.id,
+    user = User(username=username, role=ROLE_COMMON, branch_id=branch.id,
                 password_hash=hash_password(password))
     db_session.add(user)
     db_session.commit()
     return user
 
 def update_user(user_id, branch_id, new_password=""):
-    user = _get_common_user(user_id)
+    user = get_common_user(user_id)
     user.branch_id = _check_branch(branch_id).id
     if new_password:  # champ vide = on garde l'ancien mot de passe
         _check_password(new_password)
@@ -66,7 +66,7 @@ def update_user(user_id, branch_id, new_password=""):
 
 def soft_delete_user(user_id):
     """Marque le compte comme supprimé. Aucune ligne n'est effacée."""
-    user = _get_common_user(user_id)
+    user = get_common_user(user_id)
     user.deleted_at = func.now
     db_session.commit()
     return user

@@ -17,14 +17,14 @@ def all_branches():
     return db_session.query(Branch).order_by(Branch.name).all()
 
 @bp.route("/users")
-@require_role(ROLE_ADMIN)
 def users():
+    require_role(ROLE_ADMIN)
     return render_template("admin_users.html",
                            users=user_service.list_users())
 
 @bp.route("/users/new", methods=["GET", "POST"])
-@require_role(ROLE_ADMIN)
 def new_user():
+    require_role(ROLE_ADMIN)
     if request.method == "POST":
         try:
             user = user_service.create_user(
@@ -41,8 +41,8 @@ def new_user():
 
 
 @bp.route("/users/<int:user_id>/edit", methods=["GET", "POST"])
-@require_role(ROLE_ADMIN)
 def edit_user(user_id):
+    require_role(ROLE_ADMIN)
     try:
         user = user_service.get_common_user(user_id)
         if request.method == "POST":
@@ -62,8 +62,8 @@ def edit_user(user_id):
 
 
 @bp.route("/users/<int:user_id>/delete", methods=["POST"])
-@require_role(ROLE_ADMIN)
 def delete_user(user_id):
+    require_role(ROLE_ADMIN)
     try:
         user = user_service.soft_delete_user(user_id)
         flash("User %s deleted (soft delete)." % user.username, "success")
