@@ -5,6 +5,8 @@ import auth
 import config
 import permissions
 from db import db_session
+from stock_routes import stock_bp
+from routes_admin import bp as admin_bp
 
 
 def create_app():

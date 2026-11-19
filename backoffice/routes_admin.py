@@ -5,23 +5,25 @@ from flask import (Blueprint, flash, redirect, render_template, request,
 
 
 import user_service
-from auth import role_required
+from permissions import require_role
 from db import db_session
 from models import Branch, ROLE_ADMIN
 
 
 bp = Blueprint("admin", __name__, url_prefix="/admin") #permet d'ecrire les route flask dans un autre fichier qu'app.py
 
-
+def all_branches():
+    """Toutes les succursales, triées par nom (pour la liste déroulante)."""
+    return db_session.query(Branch).order_by(Branch.name).all()
 
 @bp.route("/users")
-@role_required(ROLE_ADMIN)
+@require_role(ROLE_ADMIN)
 def users():
-    return render_template("admin_user.html",
-                           users=user_service.list_user())
+    return render_template("admin_users.html",
+                           users=user_service.list_users())
 
 @bp.route("/users/new", methods=["GET", "POST"])
-@role_required(ROLE_ADMIN)
+@require_role(ROLE_ADMIN)
 def new_user():
     if request.method == "POST":
         try:
@@ -30,7 +32,7 @@ def new_user():
                 request.form.get("password"),
                 request.form.get("branch_id"),
             )
-            flash("User %s created." %user.username, "succes")
+            flash("User %s created." %user.username, "success")
             return redirect(url_for("admin.users"))
         except user_service.UserError as exc:
             flash(str(exc), "error")
@@ -39,17 +41,17 @@ def new_user():
 
 
 @bp.route("/users/<int:user_id>/edit", methods=["GET", "POST"])
-@role_required(ROLE_ADMIN)
+@require_role(ROLE_ADMIN)
 def edit_user(user_id):
     try:
-        user = user_service._get_common_user(user_id)
+        user = user_service.get_common_user(user_id)
         if request.method == "POST":
             user_service.update_user(
                 user_id,
                 request.form.get("branch_id"),
                 request.form.get("password", "")
             )
-            flash("User %s updated." % user.username, "succes")
+            flash("User %s updated." % user.username, "success")
             return redirect(url_for("admin.users"))
     except user_service.UserError as exc:
         flash(str(exc), "error")
@@ -60,7 +62,7 @@ def edit_user(user_id):
 
 
 @bp.route("/users/<int:user_id>/delete", methods=["POST"])
-@role_required(ROLE_ADMIN)
+@require_role(ROLE_ADMIN)
 def delete_user(user_id):
     try:
         user = user_service.soft_delete_user(user_id)
