@@ -75,3 +75,27 @@
 
 **Trade-off:**
 - The server has to keep the session state, unlike a stateless token.
+
+## Backoffice code organisation: one blueprint per feature
+
+**Benefits:**
+- Each feature (`stock_routes.py` for the stock pages, `routes_admin.py` for user management) lives in its own file, so team members do not edit the same file and conflicts stay rare.
+
+**Trade-off:**
+- A few more files to follow, and each blueprint has to be registered in `app.py`.
+
+## Stock pages: the branch comes from the logged-in user
+
+**Benefits:**
+- Every stock route starts with `permissions.current_branch_id()`. The branch is never read from the URL or a form, so a common user cannot act on another branch, even by editing the request. The admin gets a 403 on these routes.
+
+**Trade-off:**
+- Each new route has to call it by hand: forgetting it would leave the route open.
+
+## Stock pages: Post/Redirect/Get with flash messages
+
+**Benefits:**
+- After each POST the route redirects to the stock page, so refreshing the page does not repeat the action. The result (success or error such as invalid quantity, unknown product, not enough stock, Product API unavailable) is shown with a flash message, using only server-side templates.
+
+**Trade-off:**
+- The page reloads after each action, and products are entered as a SKU: there are no product names or selector yet.

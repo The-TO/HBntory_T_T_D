@@ -1,7 +1,9 @@
 {% block title %}{{ "Edit user" if user else "Create user" }} - HBntory{% endblock %}
 {% block content %}
 <h1>{{ "Edit user: " + user.username if user else "Create a user" }}</h1>
-
+<form method="post" action="{{ url_for('logout') }}">
+  <button type="submit">Log out</button>
+</form>
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% for category, message in messages %}
 <p class="{{ category }}">{{ message }}</p>
@@ -10,17 +12,16 @@
 
 <form method="post" class="card">
   {% if not user %}
-    <label>Username
-      <input type="text" name="username" required>
-    </label>
+  <label>Username
+    <input type="text" name="username" required>
+  </label>
   {% endif %}
   <label>Branch
     <select name="branch_id" required>
       {% for branch in branches %}
-        <option value="{{ branch.id }}"
-          {% if user and user.branch_id == branch.id %}selected{% endif %}>
-          {{ branch.name }}
-        </option>
+      <option value="{{ branch.id }}" {% if user and user.branch_id==branch.id %}selected{% endif %}>
+        {{ branch.name }}
+      </option>
       {% endfor %}
     </select>
   </label>
