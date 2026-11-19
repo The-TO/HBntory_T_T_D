@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}{{ "Edit user" if user else "Create user" }} - HBntory{% endblock %}
+{% block content %}
+<h1>{{ "Edit user: " + user.username if user else "Create a user" }}</h1>
+<form method="post" class="card">
+  {% if not user %}
+    <label>Username
+      <input type="text" name="username" required>
+    </label>
+  {% endif %}
+  <label>Branch
+    <select name="branch_id" required>
+      {% for branch in branches %}
+        <option value="{{ branch.id }}"
+          {% if user and user.branch_id == branch.id %}selected{% endif %}>
+          {{ branch.name }}
+        </option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>{{ "New password (leave empty to keep the current one)" if user else "Password (8 characters minimum)" }}
+    <input type="password" name="password" {% if not user %}required{% endif %}>
+  </label>
+  <button type="submit">Save</button>
+  <a href="{{ url_for('admin.users') }}">Cancel</a>
+</form>
+{% endblock %}
