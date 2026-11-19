@@ -41,3 +41,8 @@ def list_products():
 def get_product(product_id):
     """Renvoi le detail d'un porduit à partir de son SKU"""
     return _get("/api/v1/products/" + product_id)
+
+
+def products_by_sku():
+    """Renvoie {sku: produit} pour retrouver un produit à partir de son SKU."""
+    return {product["sku"]: product for product in list_products()}

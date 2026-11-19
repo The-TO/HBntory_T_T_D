@@ -3,6 +3,7 @@ import permissions
 import stock_service
 from db import db_session
 from models import Branch
+import product_client
 
 stock_bp = Blueprint("stock", __name__, url_prefix="/stock")
 
@@ -10,11 +11,21 @@ stock_bp = Blueprint("stock", __name__, url_prefix="/stock")
 def index():
     branch_id = permissions.current_branch_id()
     branch = db_session.get(Branch, branch_id)
+
+    # Les infos produits viennent de la Product API, jamais de la base locale.
+    try:
+        products = product_client.products_by_sku()
+    except product_client.ProductAPIError:
+        products = {}
+        flash("Product API unavailable: product names cannot be displayed.", "error")
+
     return render_template(
         "stock.html",
         branch_name=branch.name,
         items=stock_service.list_stock(branch_id),
+        products=products,
     )
+
 
 
 @stock_bp.route("/add", methods=["POST"])

@@ -21,23 +21,30 @@
 {% endfor %}
 {% endwith %}
 
+{# Liste de suggestions alimentée par la Product API : SKU + nom du produit #}
+<datalist id="products">
+  {% for sku, product in products.items() %}
+  <option value="{{ sku }}">{{ product.name }}</option>
+  {% endfor %}
+</datalist>
+
 <h2>Add stock</h2>
 <form method="post" action="{{ url_for('stock.add') }}">
-  <input name="product_id" placeholder="Product SKU" required>
+  <input name="product_id" list="products" placeholder="Product SKU" required>
   <input name="quantity" type="number" min="1" placeholder="Quantity" required>
   <button type="submit">Add</button>
 </form>
 
 <h2>Remove stock</h2>
 <form method="post" action="{{ url_for('stock.remove') }}">
-  <input name="product_id" placeholder="Product SKU" required>
+  <input name="product_id" list="products" placeholder="Product SKU" required>
   <input name="quantity" type="number" min="1" placeholder="Quantity" required>
   <button type="submit">Remove</button>
 </form>
 
 <h2>Check a quantity</h2>
 <form method="get" action="{{ url_for('stock.quantity') }}">
-  <input name="product_id" placeholder="Product SKU" required>
+  <input name="product_id" list="products" placeholder="Product SKU" required>
   <button type="submit">Check</button>
 </form>
 
@@ -46,11 +53,14 @@
 <table border="1">
   <tr>
     <th>Product (SKU)</th>
+    <th>Name</th>
     <th>Quantity</th>
   </tr>
   {% for item in items %}
+  {% set product = products.get(item.product_id) %}
   <tr>
     <td>{{ item.product_id }}</td>
+    <td>{{ product.name if product else "-" }}</td>
     <td>{{ item.quantity }}</td>
   </tr>
   {% endfor %}
