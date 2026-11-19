@@ -1,6 +1,13 @@
 {% block title %}{{ "Edit user" if user else "Create user" }} - HBntory{% endblock %}
 {% block content %}
 <h1>{{ "Edit user: " + user.username if user else "Create a user" }}</h1>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% for category, message in messages %}
+<p class="{{ category }}">{{ message }}</p>
+{% endfor %}
+{% endwith %}
+
 <form method="post" class="card">
   {% if not user %}
     <label>Username

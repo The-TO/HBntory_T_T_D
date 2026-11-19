@@ -1,8 +1,9 @@
 """Règles métier des utilisateurs (réservées à l'admin)"""
 
 from db import db_session
-from models import Branch, User, ROLE_COMMON, func
+from models import Branch, User, ROLE_COMMON
 from security import hash_password
+from datetime import datetime, timezone
 
 MIN_PASSWORD_LENGTH = 8
 
@@ -67,6 +68,6 @@ def update_user(user_id, branch_id, new_password=""):
 def soft_delete_user(user_id):
     """Marque le compte comme supprimé. Aucune ligne n'est effacée."""
     user = get_common_user(user_id)
-    user.deleted_at = func.now
+    user.deleted_at = datetime.now(timezone.utc)
     db_session.commit()
     return user
