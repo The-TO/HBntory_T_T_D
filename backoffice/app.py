@@ -5,11 +5,12 @@ import auth
 import config
 import permissions
 from db import db_session
-
+from stock_routes import stock_bp
 
 def create_app():
     app = Flask(__name__)
     app.config["SECRET_KEY"] = config.SECRET_KEY
+    app.register_blueprint(stock_bp)
 
     @app.route("/")
     def home():
@@ -17,6 +18,8 @@ def create_app():
         user = permissions.require_login()
         # TODO Task 3 : envoyer l'admin vers la gestion des utilisateurs
         # et les utilisateurs communs vers la page du stock.
+        if user.role == "common":
+            return redirect(url_for("stock.index"))
         return "Connected as %s (%s)" % (user.username, user.role)
 
     @app.route("/login", methods=["GET", "POST"])
