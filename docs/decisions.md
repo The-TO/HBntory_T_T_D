@@ -18,6 +18,8 @@
 - Each form is sent with POST. The route shows a success or error message with `flash`, then redirects to the page, so refreshing the page never sends the form twice.
 - Product information is never stored locally: it is read from the Product API through `product_client.py`.
 
+The stock page shows the product names next to the SKUs and suggests products while typing. If the Product API is down, the page still works and shows a warning.
+
 ## Client Web to AI Query Service: REST
 
 **Benefits:**
