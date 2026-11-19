@@ -1,0 +1,60 @@
+<!doctype html>
+<title>HBntory – Stock</title>
+<style>
+  .error {
+    color: red;
+  }
+
+  .message {
+    color: green;
+  }
+</style>
+<h1>Stock – {{ branch_name }}</h1>
+<p>You are working on branch: <strong>{{ branch_name }}</strong></p>
+<form method="post" action="{{ url_for('logout') }}">
+  <button type="submit">Log out</button>
+</form>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% for category, message in messages %}
+<p class="{{ category }}">{{ message }}</p>
+{% endfor %}
+{% endwith %}
+
+<h2>Add stock</h2>
+<form method="post" action="{{ url_for('stock.add') }}">
+  <input name="product_id" placeholder="Product SKU" required>
+  <input name="quantity" type="number" min="1" placeholder="Quantity" required>
+  <button type="submit">Add</button>
+</form>
+
+<h2>Remove stock</h2>
+<form method="post" action="{{ url_for('stock.remove') }}">
+  <input name="product_id" placeholder="Product SKU" required>
+  <input name="quantity" type="number" min="1" placeholder="Quantity" required>
+  <button type="submit">Remove</button>
+</form>
+
+<h2>Check a quantity</h2>
+<form method="get" action="{{ url_for('stock.quantity') }}">
+  <input name="product_id" placeholder="Product SKU" required>
+  <button type="submit">Check</button>
+</form>
+
+<h2>Products in stock</h2>
+{% if items %}
+<table border="1">
+  <tr>
+    <th>Product (SKU)</th>
+    <th>Quantity</th>
+  </tr>
+  {% for item in items %}
+  <tr>
+    <td>{{ item.product_id }}</td>
+    <td>{{ item.quantity }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p>No product in stock.</p>
+{% endif %}
