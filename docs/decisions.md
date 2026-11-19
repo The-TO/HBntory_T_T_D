@@ -75,3 +75,41 @@
 
 **Trade-off:**
 - The server has to keep the session state, unlike a stateless token.
+
+
+## Product API Integration in the Backoffice
+
+- The stock page now shows which product a user is working on. Product names come from the external Product API, never from our own database. The local database still stores only the product SKU and the quantity.
+
+- **Product suggestions:** when a user types in a SKU field (Add, Remove, Check), the browser suggests existing SKUs together with their product names.
+- **Name column:** the "Products in stock" table shows the product name next to the SKU and the quantity.
+- **Server-side check unchanged:** adding stock still verifies the SKU against the Product API, so the suggestions are only a typing aid.
+
+### Benefits
+
+- **No duplicated data:** a renamed product shows its new name immediately, with no synchronization.
+- **Efficient:** one API call per page load instead of one per table row.
+- **Resilient display:** if the API is down, the page still loads, with a warning and `-` in place of names.
+- **Safe input:** every SKU is still validated on the server before stock is added.
+
+### Trade-offs
+
+- **Dependency on the API:** while it is down, names are not shown and adding stock is refused, because the SKU cannot be verified.
+- **No cache:** names are always fresh, but each page load makes an extra request to the API.
+- **No pagination:** at most 100 products are loaded. A larger catalog would need paging.
+- **Free typing allowed:** the SKU field is not a strict dropdown, so a wrong SKU can be typed. It is rejected on submit, not while typing.
+
+
+### How it works
+
+1. `products_by_sku()` in `product_client.py` calls the Product API once and returns a dictionary `{sku: product}`.
+2. The `index` route in `stock_routes.py` loads this dictionary and passes it to the template. If the API is unreachable, it passes an empty dictionary and shows a warning.
+3. `stock.html` uses the dictionary to fill the suggestion list and the Name column. A product that is not found in the API response is shown as `-`.
+
+##### How to test
+
+1. Start the Product API container (port 5001).
+2. Run `init_db.py`, then `python3 app.py` from `backoffice/`.
+3. Log in as a common user and open `/stock/`. Check that the table shows a Name column and that the SKU fields suggest products.
+4. Stop the Product API and reload `/stock/`. The page should still load, with a warning and `-` in the Name column.
+5. Run `pytest -v` from `backoffice/` for the automatic tests.
