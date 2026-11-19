@@ -66,7 +66,7 @@ def update_user(user_id, branch_id, new_password=""):
 
 def soft_delete_user(user_id):
     """Marque le compte comme supprimé. Aucune ligne n'est effacée."""
-    user = _get_common_user(user_id)
+    user = get_common_user(user_id)
     user.deleted_at = func.now
     db_session.commit()
     return user
