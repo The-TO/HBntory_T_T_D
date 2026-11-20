@@ -17,7 +17,7 @@ from mcp.server.fastmcp import FastMCP
 PRODUCT_API_URL = os.environ.get("PRODUCT_API_URL", "http://localhost:5001")
 #Chemin de la base du Backoffice, depuis le dossier ou on lance le 
 #programme (product_mcp_server/ ou ai_service/, tous deux à coté de Backoffice)
-DB_PATH = os.environ.get("HBNTORY_DB", "../backoffice/hbntory.db")
+DB_PATH = os.environ.get("HBNTORY_DB", "../data/hbntory.db")
 
 mcp = FastMCP("hbntory")
 
@@ -33,9 +33,9 @@ def error(code, message):
 def call_product_api(path, params=None):
     """Appelle la Product API. Renvoie (données, None) ou (None, erreur)."""
     try:
-        response = requests.get(PRODUCT_API_URL + PATH, params=params,
+        response = requests.get(PRODUCT_API_URL + path, params=params,
                                 timeout=5)
-    except requests.RequestExecption:
+    except requests.RequestException:
         return None, error("product_api_unavailable",
                            "The Product API cannot be reached. Product "
                            "information is unavailable right now.")
@@ -89,8 +89,8 @@ def get_product(sku: str) ->dict:
         "brand":data["brand"],
         "unit_price":data["unit_price"],
         "currency":data["currency"],
-        "discountinued":data["discontinued"],
+        "discontinued":data["discontinued"],
     }}
 
-if __name__ == "__mpain__":
+if __name__ == "__main__":
     mcp.run()  # transport stdio
