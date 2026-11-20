@@ -21,8 +21,8 @@ Every call to the Product API uses a **5 second timeout**, so the agent is never
 
 | Tool | Input | Output on success | Possible errors |
 | --- | --- | --- | --- |
-| `list_products` | `search` (string, optional): a word of the product name, SKU or tag, for example `"mouse"`. Empty = all products. | `{"ok": true, "count": n, "products": [{"sku", "name", "category", "unit_price", "currency"}]}` | `product_api_unavailable`, `product_api_error` |
-| `get_product` | `sku` (string, required): the product SKU, for example `"HB-LAP-1001"` | `{"ok": true, "product": {"sku", "name", "description", "category", "brand", "unit_price", "currency", "discontinued"}}` | `invalid_input`, `product_not_found`, `product_api_unavailable`, `product_api_error` |
+| `list_products` | `search` (string, optional): a word of the product name, for example `"mouse"`. Empty = all products. | `{"ok": true, "products": [{"sku", "name", "category", "unit_price", "currency"}]}` | `product_api_unavailable` |
+| `get_product` | `sku` (string, required): the product SKU, for example `"HB-LAP-1001"`. Spaces are removed and letters are put in upper case. | `{"ok": true, "product": {"sku", "name", "description", "category", "brand", "unit_price", "currency", "discontinued"}}` | `invalid_input`, `product_not_found`, `product_api_unavailable` |
 
 Why two tools only:
 
@@ -39,7 +39,7 @@ Every tool returns the same structure when something goes wrong:
 {
   "ok": false,
   "error": "product_not_found",
-  "message": "No product matches this SKU."
+  "message": "No product matches this SKU"
 }
 ```
 
@@ -51,8 +51,7 @@ Every tool returns the same structure when something goes wrong:
 | --- | --- |
 | `invalid_input` | A required input is missing or empty (for example an empty SKU). |
 | `product_not_found` | The Product API answered `404`: no product has this SKU. |
-| `product_api_unavailable` | The Product API cannot be reached: connection refused or timeout. |
-| `product_api_error` | The Product API answered with an unexpected status (for example `503`). |
+| `product_api_unavailable` | The Product API cannot be reached (connection refused or timeout), or it answered with an unexpected status (for example `503`). In both cases, the agent can only say that product information is unavailable, so one code is enough. The message tells the two situations apart. |
 
 ## Error handling
 
@@ -63,7 +62,7 @@ The server handles the four cases required by the project:
 | Successful product listing | `200`, products in `results` | `ok: true` and the product list |
 | Product detail retrieval | `200`, one product | `ok: true` and the product |
 | Product not found | `404` | `ok: false`, `product_not_found` |
-| Product API connection error | no answer (exception) or error status | `ok: false`, `product_api_unavailable` or `product_api_error` |
+| Product API connection error | no answer (exception) or error status | `ok: false`, `product_api_unavailable` |
 
 How it works: all calls to the Product API go through one function, `call_product_api(path, params)`. It sends the request with `requests.get(..., timeout=5)` and returns either the data or an error in the format above. The tools only check whether an error came back, and return it as it is.
 
@@ -85,7 +84,7 @@ The agent does not need them to answer the supported questions. Fewer tools and 
 
 ## Manual tests
 
-Before connecting the AI agent, the tools are tested by hand with `product_mcp_server/test_client.py`. The script starts the server, lists its tools, then calls them one by one and prints each result.
+Before connecting the AI agent, the tools were tested by hand with `product_mcp_server/test_client.py`. The script starts the server, lists its tools, then calls them one by one and prints each result.
 
 How to run it (the Product API must be running):
 
@@ -94,27 +93,108 @@ cd product_mcp_server
 python3 test_client.py
 ```
 
-To simulate a Product API failure, give the server an address where nothing answers:
-
-```bash
-PRODUCT_API_URL=http://localhost:5999 python3 test_client.py
-```
+To test a Product API failure, stop the Product API (or give the server an address where nothing answers, for example `PRODUCT_API_URL=http://localhost:5999 python3 test_client.py`) and run the script again.
 
 | Test | Call | Expected result | Result |
 | --- | --- | --- | --- |
-| Product listing works | `list_products(search="keyboard")` | `ok: true`, a list of keyboards | |
-| Product detail works | `get_product(sku="HB-LAP-1001")` | `ok: true`, the Holberton Student Laptop 14 | |
-| Invalid product identifier | `get_product(sku="HB-DOES-NOT-EXIST")` | `ok: false`, `product_not_found` | |
-| Empty identifier | `get_product(sku="")` | `ok: false`, `invalid_input` | |
-| Product API failure | any tool, with `PRODUCT_API_URL=http://localhost:5999` | `ok: false`, `product_api_unavailable` | |
+| Product listing works | `list_products(search="keyboard")` | `ok: true`, a list of keyboards | ✅ 2 keyboards |
+| Product detail works | `get_product(sku="HB-LAP-1001")` | `ok: true`, the Holberton Student Laptop 14 | ✅ |
+| Invalid product identifier | `get_product(sku="HB-DOES-NOT-EXIST")` | `ok: false`, `product_not_found` | ✅ |
+| Empty identifier | `get_product(sku="")` | `ok: false`, `invalid_input` | ✅ |
+| Product API failure | all tools, with the Product API stopped | `ok: false`, `product_api_unavailable` | ✅ |
 
-Test output (date: ...):
+### Test output with the Product API running (20/11/2026)
 
 ```text
-(paste the output of test_client.py here)
+TOOLS: ['list_products', 'get_product']
+
+>>> list_products {'search': 'keyboard'}
+{
+  "ok": true,
+  "products": [
+    {
+      "sku": "HB-KBD-4102",
+      "name": "Compact Keyboard ES",
+      "category": "Accessories",
+      "unit_price": 49.99,
+      "currency": "USD"
+    },
+    {
+      "sku": "HB-KBD-4101",
+      "name": "Mechanical Keyboard EN",
+      "category": "Accessories",
+      "unit_price": 74.0,
+      "currency": "USD"
+    }
+  ]
+}
+
+>>> get_product {'sku': 'HB-LAP-1001'}
+{
+  "ok": true,
+  "product": {
+    "sku": "HB-LAP-1001",
+    "name": "Holberton Student Laptop 14",
+    "description": "Training catalog item for HBntory integration: holberton student laptop 14.",
+    "category": "Laptops",
+    "brand": "Holberton",
+    "unit_price": 799.0,
+    "currency": "USD",
+    "discontinued": false
+  }
+}
+
+>>> get_product {'sku': 'HB-DOES-NOT-EXIST'}
+{
+  "ok": false,
+  "error": "product_not_found",
+  "message": "No product matches this SKU"
+}
+
+>>> get_product {'sku': ''}
+{
+  "ok": false,
+  "error": "invalid_input",
+  "message": "A product SKU is required."
+}
 ```
+
+### Test output with the Product API stopped (20/11/2026)
+
+```text
+TOOLS: ['list_products', 'get_product']
+
+>>> list_products {'search': 'keyboard'}
+{
+  "ok": false,
+  "error": "product_api_unavailable",
+  "message": "The Product API cannot be reached. Product information is unavailable right now."
+}
+
+>>> get_product {'sku': 'HB-LAP-1001'}
+{
+  "ok": false,
+  "error": "product_api_unavailable",
+  "message": "The Product API cannot be reached. Product information is unavailable right now."
+}
+
+>>> get_product {'sku': 'HB-DOES-NOT-EXIST'}
+{
+  "ok": false,
+  "error": "product_api_unavailable",
+  "message": "The Product API cannot be reached. Product information is unavailable right now."
+}
+
+>>> get_product {'sku': ''}
+{
+  "ok": false,
+  "error": "invalid_input",
+  "message": "A product SKU is required."
+}
+```
+
+The empty SKU is refused before any call to the Product API, which is why it returns `invalid_input` in both runs.
 
 ## Planned for Task 5: stock tools
 
 The AI agent will also need stock information. It will be added to this same server as read-only tools (`get_branch_stock`, `check_purchase_availability`, and a tool for the stock of one product across all branches). They will be documented in this file when they are implemented.
-

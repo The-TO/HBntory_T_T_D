@@ -15,13 +15,7 @@ CALLS = [
     ("list_products", {"search": "keyboard"}),
     ("get_product", {"sku": "HB-LAP-1001"}),
     ("get_product", {"sku": "HB-DOES-NOT-EXIST"}),
-    ("get_product_stock", {"sku": "HB-LAP-1001"}),
-    ("get_branch_stock", {"branch": "Paris"}),
-    ("get_branch_stock", {"branch": "Atlantis"}),
-    ("check_shopping_list", {"items": [
-        {"sku": "HB-LAP-1001", "quantity": 2},
-        {"sku": "HB-MSE-4201", "quantity": 10},
-    ]}),
+    ("get_product", {"sku": ""}),
 ]
 
 
