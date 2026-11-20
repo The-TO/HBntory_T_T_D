@@ -1,6 +1,8 @@
 """tout les Réglages du Backoffice en un seul endroit, lus depuis les variables d'environnement."""
 import os
 
+
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_DB_PATH = os.path.join(BASE_DIR, "..", "data", "hbntory.db")
 
