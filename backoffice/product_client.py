@@ -17,6 +17,8 @@ class ProductAPIError(Exception):
 
 
 def _get(path, params=None):
+    """Fetch JSON data from the Product API.
+    """
     url = config.PRODUCT_API_URL + path
 
     try:

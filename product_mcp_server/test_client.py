@@ -20,6 +20,8 @@ CALLS = [
 
 
 async def main():
+    """Start the MCP server and call each configured tool.
+    """
     # sys.executable : le Python de ton environnement virtuel.
     # env : transmet tes variables d'environnement au serveur.
     server = StdioServerParameters(command=sys.executable,

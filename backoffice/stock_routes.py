@@ -1,3 +1,5 @@
+"""Routes for displaying and updating branch stock levels."""
+
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 import permissions
 import stock_service
@@ -9,6 +11,8 @@ stock_bp = Blueprint("stock", __name__, url_prefix="/stock")
 
 @stock_bp.route("/")
 def index():
+    """Display stock for the current branch.
+    """
     branch_id = permissions.current_branch_id()
     branch = db_session.get(Branch, branch_id)
 
@@ -30,6 +34,8 @@ def index():
 
 @stock_bp.route("/add", methods=["POST"])
 def add():
+    """Add the requested quantity of a product to the current branch.
+    """
     branch_id = permissions.current_branch_id()
     try:
         item = stock_service.add_stock(
@@ -42,6 +48,8 @@ def add():
 
 @stock_bp.route("/remove", methods=["POST"])
 def remove():
+    """Remove the requested quantity of a product from the current branch.
+    """
     branch_id = permissions.current_branch_id()
     try:
         item = stock_service.remove_stock(
@@ -53,6 +61,8 @@ def remove():
 
 @stock_bp.route("/quantity")
 def quantity():
+    """Display the current branch's quantity for a product.
+    """
     branch_id = permissions.current_branch_id()
     product_id = (request.args.get("product_id") or "").strip().upper()
     if not product_id:

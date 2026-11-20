@@ -5,11 +5,15 @@ import product_client
 
 
 class StockError(Exception):
-    """Opération de stock refusée (le message est affichable)."""
+    """Opération de stock refusée (le message est affichable).
+
+    Raised when a stock operation cannot be completed.
+    """
 
 
 def parse_quantity(value):
-    """Vérifie que la quantité est un entier strictement positif."""
+    """Vérifie que la quantité est un entier strictement positif.
+    """
     try:
         quantity = int(value)
     except (TypeError, ValueError):
@@ -20,7 +24,8 @@ def parse_quantity(value):
 
 
 def _check_branch(branch_id):
-    """Verifie que la branche existe"""
+    """Verifie que la branche existe
+    """
     branch = db_session.get(Branch, branch_id)
     if branch is None:
         raise StockError("Unknown branch.")
@@ -28,7 +33,8 @@ def _check_branch(branch_id):
 
 
 def _check_product(product_id):
-    """Vérifie que le produit existe dans la Product API."""
+    """Vérifie que le produit existe dans la Product API.
+    """
     product_id = (product_id or "").strip().upper()
     if not product_id:
         raise StockError("Product identifier is required.")
@@ -44,12 +50,16 @@ def _check_product(product_id):
 
 
 def _find(branch_id, product_id):
+    """Find a stock record for a branch and product.
+    """
     return db_session.query(Stock).filter_by(
         branch_id=branch_id, product_id=product_id
     ).first()
 
 
 def add_stock(branch_id, product_id, quantity):
+    """Add a quantity of a product to a branch's stock.
+    """
     quantity = parse_quantity(quantity)
     _check_branch(branch_id)
     sku = _check_product(product_id)
@@ -63,6 +73,8 @@ def add_stock(branch_id, product_id, quantity):
 
 
 def remove_stock(branch_id, product_id, quantity):
+    """Remove a quantity of a product from a branch's stock.
+    """
     quantity = parse_quantity(quantity)
     _check_branch(branch_id)
     sku = (product_id or "").strip().upper()
@@ -79,12 +91,15 @@ def remove_stock(branch_id, product_id, quantity):
 
 
 def list_stock(branch_id):
-    """Produits réellement en stock (quantité > 0) dans une branche."""
+    """Produits réellement en stock (quantité > 0) dans une branche.
+    """
     return db_session.query(Stock).filter(
         Stock.branch_id == branch_id, Stock.quantity > 0
     ).order_by(Stock.product_id).all()
 
 
 def get_quantity(branch_id, product_id):
+    """Get the quantity of a product held by a branch.
+    """
     item = _find(branch_id, (product_id or "").strip().upper())
     return item.quantity if item else 0

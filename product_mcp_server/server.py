@@ -15,7 +15,7 @@ from mcp.server.fastmcp import FastMCP
 
 
 PRODUCT_API_URL = os.environ.get("PRODUCT_API_URL", "http://localhost:5001")
-#Chemin de la base du Backoffice, depuis le dossier ou on lance le 
+#Chemin de la base du Backoffice, depuis le dossier ou on lance le
 #programme (product_mcp_server/ ou ai_service/, tous deux à coté de Backoffice)
 DB_PATH = os.environ.get("HBNTORY_DB", "../data/hbntory.db")
 
@@ -52,7 +52,7 @@ def call_product_api(path, params=None):
 @mcp.tool()
 def list_products(search: str = "") -> dict:
     """List the products of the catalog: sku, name, category, price.
-    
+
     Use `search`to find a product by a word of its name (example:
     "mouse"). Leave it empty to list every product.
     """
@@ -70,6 +70,7 @@ def list_products(search: str = "") -> dict:
                          "unit_price": p["unit_price"],
                          "currency": p["currency"]})
     return {"ok": True, "products": products}
+
 
 @mcp.tool()
 def get_product(sku: str) ->dict:
