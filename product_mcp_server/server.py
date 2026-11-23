@@ -134,7 +134,10 @@ def product_names():
 
 @mcp.tool()
 def get_product_stock(sku: str) -> dict:
-    """Get the positive stock quantities for a product across all branches.
+    """Get the stock of ONE product in every branch (example sku: HB-LAP-1001).
+
+    Only branches with at least one unit are listed. An empty list means the
+    product is out of stock everywhere, or unknown (use get_product to check).
     """
     sku = sku.strip().upper()
     if not sku:
@@ -154,7 +157,9 @@ def get_product_stock(sku: str) -> dict:
 
 @mcp.tool()
 def get_branch_stock(branch: str) -> dict:
-    """Get all products with positive stock at a named branch.
+    """List the products in stock in ONE branch, with their quantity.
+
+    `branch` is the branch NAME, for example "Main Campus" (case does not matter).
     """
     branches, err = query_db("SELECT id, name FROM branches ORDER BY name")
     if err:
@@ -180,7 +185,14 @@ def get_branch_stock(branch: str) -> dict:
 
 @mcp.tool()
 def check_shopping_list(items: list[dict]) -> dict:
-    """Check whether branch stock can satisfy a shopping list.
+    """Find which branch(es) to visit to buy a shopping list.
+
+    `items` is a list of objects with the keys "sku" and "quantity", for
+    example [{"sku": "HB-LAP-1001", "quantity": 3}, {"sku": "HB-KBD-4101",
+    "quantity": 2}]. Use the SKU (find it with list_products if the customer
+    gave a product name). Returns the branches that have EVERYTHING
+    (`single_branch`), a visit `plan` using as few branches as possible, and
+    the products no branch can provide in full (`missing`).
     """
     wanted = {}
     for item in items:
