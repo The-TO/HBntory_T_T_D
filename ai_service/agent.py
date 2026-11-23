@@ -51,10 +51,15 @@ def call_ollama(messages, tools):
     try:
         response = requests.post(settings.OLLAMA_URL + "/api/chat",
                                  json=payload, timeout=settings.MODEL_TIMEOUT)
-    except requests.RequestException:
+    except requests.RequestException as error:
+        # Le détail technique va dans le terminal, pas à l'utilisateur.
+        print("OLLAMA ERROR", repr(error))
         raise AgentError("The AI model is unavailable right now. "
                          "Is Ollama running?")
     if response.status_code != 200:
+        # Ollama explique son erreur dans le corps de la réponse,
+        # par exemple : model "qwen3:8b" not found, try pulling it first.
+        print("OLLAMA ERROR", response.status_code, response.text[:300])
         raise AgentError("The AI model returned an error (HTTP %d). "
                          "Is the model downloaded?" % response.status_code)
     return response.json()["message"]
@@ -98,6 +103,7 @@ async def run_tool(session, name, arguments, tool_names):
     cas de problème, une erreur que le modèle pourra expliquer."""
     print("TOOL CALL", name, arguments)  # pour voir ce que fait l'agent
     if name not in tool_names:
+        print("UNKNOWN TOOL asked by the model:", name)
         text = tool_error("unknown_tool", "No tool named '%s'." % name)
     else:
         try:
@@ -145,6 +151,7 @@ async def talk_to_model(session, question):
                 "content": text[:settings.MAX_TOOL_RESULT_CHARS],
             })
 
+    print("AGENT STOPPED after %d rounds" % settings.MAX_TOOL_ROUNDS)
     return FALLBACK_ANSWER, tools_used  # trop de tours : on s'arrête
 
 
