@@ -15,7 +15,7 @@ import agent
 
 app = Flask(__name__)
 
-@app.route("/api/ai/querry", methods=["POST"])
+@app.route("/api/ai/query", methods=["POST"])
 def ai_query():
     """Get a json question and return the agent response"""
     data = request.get_json(silent=True)
