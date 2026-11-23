@@ -1,4 +1,7 @@
-"""pages de gestion des utilisateurs (admin uniquement)"""
+"""pages de gestion des utilisateurs (admin uniquement)
+
+Provides administrator-only pages for managing users.
+"""
 
 from flask import (Blueprint, flash, redirect, render_template, request,
                    url_for)
@@ -13,17 +16,22 @@ from models import Branch, ROLE_ADMIN
 bp = Blueprint("admin", __name__, url_prefix="/admin") #permet d'ecrire les route flask dans un autre fichier qu'app.py
 
 def all_branches():
-    """Toutes les succursales, triées par nom (pour la liste déroulante)."""
+    """Toutes les succursales, triées par nom (pour la liste déroulante).
+    """
     return db_session.query(Branch).order_by(Branch.name).all()
 
 @bp.route("/users")
 def users():
+    """Display the user management page.
+    """
     require_role(ROLE_ADMIN)
     return render_template("admin_users.html",
                            users=user_service.list_users())
 
 @bp.route("/users/new", methods=["GET", "POST"])
 def new_user():
+    """Create a user or display the new-user form.
+    """
     require_role(ROLE_ADMIN)
     if request.method == "POST":
         try:
@@ -42,6 +50,8 @@ def new_user():
 
 @bp.route("/users/<int:user_id>/edit", methods=["GET", "POST"])
 def edit_user(user_id):
+    """Update a user's branch or password, or display the edit form.
+    """
     require_role(ROLE_ADMIN)
     try:
         user = user_service.get_common_user(user_id)
@@ -63,6 +73,8 @@ def edit_user(user_id):
 
 @bp.route("/users/<int:user_id>/delete", methods=["POST"])
 def delete_user(user_id):
+    """Soft-delete a user.
+    """
     require_role(ROLE_ADMIN)
     try:
         user = user_service.soft_delete_user(user_id)

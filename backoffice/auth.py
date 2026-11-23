@@ -27,10 +27,13 @@ class NotAuthenticated(AuthError):
 
 
 def _now():
+    """Return the current UTC time as a naive datetime."""
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 def _hash_token(token):
+    """Return the SHA-256 hexadecimal digest of a session token.
+    """
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 

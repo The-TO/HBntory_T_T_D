@@ -1,4 +1,8 @@
-"""Règles métier des utilisateurs (réservées à l'admin)"""
+"""Règles métier des utilisateurs (réservées à l'admin)
+
+Provides business rules for creating, updating, listing, and soft-deleting
+users. These operations are intended for administrators.
+"""
 
 from db import db_session
 from models import Branch, User, ROLE_COMMON
@@ -9,10 +13,13 @@ MIN_PASSWORD_LENGTH = 8
 
 
 class UserError(Exception):
-    """Opération sur un utilisateur refusée(message affichable)"""
+    """Represents a user operation that was rejected with a displayable message.
+    """
+
 
 def _check_password(password):
-    """Verifie la longueur du mot de passe"""
+    """Validate that a password meets the minimum length requirement.
+    """
     if not password or len(password) < MIN_PASSWORD_LENGTH:
         raise UserError(
             "Password must be at least %d characters" %MIN_PASSWORD_LENGTH
@@ -20,7 +27,8 @@ def _check_password(password):
 
 
 def _check_branch(branch_id):
-    """verifie que la succursale existe """
+    """Retrieve a branch by its identifier.
+    """
     try:
         branch = db_session.get(Branch, int(branch_id))
     except (TypeError, ValueError):
@@ -29,8 +37,10 @@ def _check_branch(branch_id):
         raise UserError("Please choose a valid branch")
     return branch
 
+
 def get_common_user(user_id):
-    """Empeche la modification d'un'admin ni d'un compte déja supprimé"""
+    """Retrieve an existing, undeleted user who is not an administrator.
+    """
     user =db_session.get(User, user_id)
     if user is None or user.is_admin or user.is_deleted:
         raise UserError ("User not found")
@@ -38,10 +48,14 @@ def get_common_user(user_id):
 
 
 def list_users():
-    """Renvoi la liste des utilisateurs, dans l'odre croissant des noms"""
+    """Return all users ordered by username.
+    """
     return db_session.query(User).order_by(User.username).all()
 
+
 def create_user(username, password, branch_id):
+    """Create a common user after validating its details.
+    """
     username = (username or "").strip()
     if not username:
         raise UserError("username is required")
@@ -55,7 +69,10 @@ def create_user(username, password, branch_id):
     db_session.commit()
     return user
 
+
 def update_user(user_id, branch_id, new_password=""):
+    """Update a common user's branch and optionally its password.
+    """
     user = get_common_user(user_id)
     user.branch_id = _check_branch(branch_id).id
     if new_password:  # champ vide = on garde l'ancien mot de passe
@@ -66,7 +83,8 @@ def update_user(user_id, branch_id, new_password=""):
 
 
 def soft_delete_user(user_id):
-    """Marque le compte comme supprimé. Aucune ligne n'est effacée."""
+    """Mark a common user's account as deleted without removing its database row.
+    """
     user = get_common_user(user_id)
     user.deleted_at = datetime.now(timezone.utc)
     db_session.commit()
