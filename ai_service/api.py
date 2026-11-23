@@ -13,7 +13,15 @@ import agent
 
 app = Flask(__name__)
 
-@app.route("/api/ai/query", methods=["POST"])
+@app.after_request
+def allow_client_page(response):
+    """CORS : autorise la page cliente (sur un autre port) à appeler ici."""
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+    response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+    return response
+
+@app.route("/api/ai/query", methods=["POST", "OPTIONS"])
 def ai_query():
     """Reçoit une question en JSON et renvoie la réponse de l'agent."""
     # Avant un POST en JSON, le navigateur envoie tout seul une requête
