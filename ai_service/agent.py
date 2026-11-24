@@ -137,6 +137,7 @@ async def talk_to_model(session, question):
         tool_calls = message.get("tool_calls")
         if not tool_calls:  # pas de tool demandé : c'est la réponse finale
             answer = (message.get("content") or "").strip()
+            answer = answer.replace("**", "")  # enlève le gras Markdown
             return answer or FALLBACK_ANSWER, tools_used
 
         for call in tool_calls:
