@@ -81,24 +81,36 @@ def list_products(search: str = "") -> dict:
 
 
 @mcp.tool()
-def get_product(sku: str) ->dict:
-    """Get the full details of ONE product from its SKU (example: HB-LAP-1001).
+def get_product(sku: str) -> dict:
+    """Get the full details of ONE product.
+
+    `sku` can be the SKU (example: HB-LAP-1001) or the product name written by
+    the customer: the tool finds the product itself. Never invent a SKU.
+    `status` is "active" for a product sold normally and "discontinued" for a
+    product that is no longer sold. It says nothing about the stock.
     """
-    sku = sku.strip().upper()
-    if not sku:
-        return error("invalid_input", "A product SKU is required.")
+    text = sku.strip()
+    if not text:
+        return error("invalid_input", "A product SKU or name is required.")
+    names = product_names()  # {} if the Product API is down
+    if names:
+        sku, problem = resolve_product(text, names)
+        if problem:
+            return error("product_not_found", problem)
+    else:
+        sku = text.upper()  # catalog unavailable: we trust the SKU as given
     data, err = call_product_api("/api/v1/products/" + sku)
     if err:
         return err
     return {"ok": True, "product": {
         "sku": data["sku"],
-        "name":data["name"],
-        "description":data["description"],
-        "category":data["category"],
-        "brand":data["brand"],
-        "unit_price":data["unit_price"],
-        "currency":data["currency"],
-        "discontinued":data["discontinued"],
+        "name": data["name"],
+        "description": data["description"],
+        "category": data["category"],
+        "brand": data["brand"],
+        "unit_price": data["unit_price"],
+        "currency": data["currency"],
+        "status": "discontinued" if data["discontinued"] else "active",
     }}
 
 # ==================================================================
@@ -132,18 +144,63 @@ def product_names():
     return {p["sku"]: p["name"] for p in data["results"]}
 
 
+def unknown_skus(skus):
+    """SKUs that do not exist in the catalog.
+
+    Returns [] if the Product API is down: we do not refuse a customer
+    because of a catalog outage.
+    """
+    names = product_names()
+    if not names:
+        return []
+    return [sku for sku in skus if sku not in names]
+
+
+def resolve_product(text, names):
+    """Turn a SKU or a product name into a SKU.
+
+    Returns (sku, None), or (None, problem) if nothing (or too many things) match.
+    `names` is the {sku: name} dictionary of the catalog.
+    """
+    wanted = text.strip().lower()
+    if wanted.upper() in names:                       # already a real SKU
+        return wanted.upper(), None
+    same_name = [sku for sku, name in names.items() if name.lower() == wanted]
+    if len(same_name) == 1:
+        return same_name[0], None
+    # Every word of the text must appear in the product name, in any order.
+    words = wanted.split()
+    matches = [sku for sku, name in names.items()
+               if all(word in name.lower() for word in words)]
+    if len(matches) == 1:
+        return matches[0], None
+    if matches:
+        options = ", ".join("%s (%s)" % (names[sku], sku) for sku in matches[:5])
+        return None, "'%s' matches several products: %s" % (text, options)
+    return None, "'%s' matches no product of the catalog" % text
+
+
 @mcp.tool()
 def get_product_stock(sku: str) -> dict:
-    """Get the stock of ONE product in every branch (example sku: HB-LAP-1001).
+    """Get the stock of ONE product in every branch.
 
+    `sku` can be the SKU (example: HB-LAP-1001) or the product name written by
+    the customer: the tool finds the product itself. Never invent a SKU.
     For ONE product only, without a quantity. If the customer wants several
     products or gives quantities, use check_shopping_list instead.
     Only branches with at least one unit are listed. An empty list means the
-    product is out of stock everywhere, or unknown (use get_product to check).
+    product is out of stock everywhere.
     """
-    sku = sku.strip().upper()
-    if not sku:
-        return error("invalid_input", "A product SKU is required.")
+    text = sku.strip()
+    if not text:
+        return error("invalid_input", "A product SKU or name is required.")
+    names = product_names()  # {} if the Product API is down
+    if names:
+        sku, problem = resolve_product(text, names)
+        if problem:
+            return error("product_not_found", problem)
+    else:
+        sku = text.upper()  # catalog unavailable: we trust the SKU as given
     rows, err = query_db(
         "SELECT b.name, s.quantity FROM stock s "
         "JOIN branches b ON b.id = s.branch_id "
@@ -153,7 +210,8 @@ def get_product_stock(sku: str) -> dict:
     if err:
         return err
     branches = [{"branch": name, "quantity": qty} for name, qty in rows]
-    return {"ok": True, "sku": sku, "in_stock": bool(branches),
+    return {"ok": True, "sku": sku, "name": names.get(sku),
+            "in_stock": bool(branches),
             "total": sum(b["quantity"] for b in branches), "branches": branches}
 
 
@@ -192,25 +250,38 @@ def check_shopping_list(items: list[dict]) -> dict:
     Use this tool whenever the customer gives quantities, even for a single
     product. Never compute stock totals yourself.
     `items` is a list of objects with the keys "sku" and "quantity", for
-    example [{"sku": "HB-LAP-1001", "quantity": 3}, {"sku": "HB-KBD-4101",
-    "quantity": 2}]. Use the SKU (find it with list_products if the customer
-    gave a product name). Returns the branches that have EVERYTHING
-    (`single_branch`), a visit `plan` using as few branches as possible, and
-    the products no branch can provide in full (`missing`).
+    example [{"sku": "HB-LAP-1001", "quantity": 3}, {"sku": "Compact Keyboard ES",
+    "quantity": 2}]. "sku" can be the SKU or the product name written by the
+    customer: the tool finds the product itself. Never invent a SKU.
+    Returns the branches that have EVERYTHING (`single_branch`), a visit `plan`
+    using as few branches as possible, the products no branch can provide in
+    full (`missing`), `products` (SKU -> name) and `unknown_products` (items not
+    found in the catalog; the rest of the answer covers only the other items).
     """
+    names = product_names()  # {} if the Product API is down
     wanted = {}
+    unknown_products = []
     for item in items:
         try:
-            sku = str(item.get("sku", "")).strip().upper()
+            text = str(item.get("sku", "")).strip()
             quantity = int(item.get("quantity"))
         except (AttributeError, TypeError, ValueError):
             return error("invalid_input",
                          "Each item needs a 'sku' and a whole 'quantity'.")
-        if not sku or quantity <= 0:
+        if not text or quantity <= 0:
             return error("invalid_input",
                          "Each item needs a SKU and a quantity greater than zero.")
+        if names:
+            sku, problem = resolve_product(text, names)
+            if problem:
+                unknown_products.append(problem)
+                continue
+        else:
+            sku = text.upper()  # catalog unavailable: we trust the SKU as given
         wanted[sku] = wanted.get(sku, 0) + quantity
     if not wanted:
+        if unknown_products:
+            return error("unknown_product", "; ".join(unknown_products))
         return error("invalid_input", "The shopping list is empty.")
 
     rows, err = query_db(
@@ -219,7 +290,7 @@ def check_shopping_list(items: list[dict]) -> dict:
     )
     if err:
         return err
-    stock = {}  # {sku: quantity}
+    stock = {}  # {branch: {sku: quantity}}
     for branch, sku, quantity in rows:
         stock.setdefault(branch, {})[sku] = quantity
     branches = sorted(stock)
@@ -232,16 +303,22 @@ def check_shopping_list(items: list[dict]) -> dict:
     missing = []
     for sku, requested in wanted.items():
         if not any(has_enough(b, sku) for b in branches):
-            total = sum(stock[b].get(sku, 0) for b in branches)
-            missing.append({"sku": sku, "requested": requested,
-                            "total_available": total})
+            missing.append({
+                "sku": sku,
+                "name": names.get(sku),
+                "requested": requested,
+                "by_branch": {b: stock[b].get(sku, 0) for b in branches},
+                "note": "No single branch has the requested quantity.",
+            })
 
     result = {
         "ok": True,
-        "can_be_satisfied": not missing,
+        "can_be_satisfied": not missing and not unknown_products,
         "single_branch": [b for b in branches
                           if all(has_enough(b, s) for s in wanted)],
         "missing": missing,
+        "unknown_products": unknown_products,
+        "products": {sku: names.get(sku, sku) for sku in wanted},
     }
     if not missing:
         for size in range(1, len(branches) + 1):
