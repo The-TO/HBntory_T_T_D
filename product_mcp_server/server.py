@@ -102,7 +102,7 @@ def get_product(sku: str) ->dict:
     }}
 
 # ==================================================================
-# 1. Tools Stock
+# 2. Tools Stock
 # ==================================================================
 
 def query_db(sql, params=()):
@@ -136,6 +136,8 @@ def product_names():
 def get_product_stock(sku: str) -> dict:
     """Get the stock of ONE product in every branch (example sku: HB-LAP-1001).
 
+    For ONE product only, without a quantity. If the customer wants several
+    products or gives quantities, use check_shopping_list instead.
     Only branches with at least one unit are listed. An empty list means the
     product is out of stock everywhere, or unknown (use get_product to check).
     """
@@ -187,6 +189,8 @@ def get_branch_stock(branch: str) -> dict:
 def check_shopping_list(items: list[dict]) -> dict:
     """Find which branch(es) to visit to buy a shopping list.
 
+    Use this tool whenever the customer gives quantities, even for a single
+    product. Never compute stock totals yourself.
     `items` is a list of objects with the keys "sku" and "quantity", for
     example [{"sku": "HB-LAP-1001", "quantity": 3}, {"sku": "HB-KBD-4101",
     "quantity": 2}]. Use the SKU (find it with list_products if the customer
