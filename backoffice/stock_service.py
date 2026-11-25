@@ -38,6 +38,10 @@ def _check_product(product_id):
     product_id = (product_id or "").strip().upper()
     if not product_id:
         raise StockError("Product identifier is required.")
+    if not (product_id.isascii() and product_id.replace("-", "").isalnum()):
+        raise StockError(
+            "Invalid product identifier: use only letters, digits and hyphens."
+        )
     try:
         product = product_client.get_product(product_id)
     except product_client.ProductNotFound:
