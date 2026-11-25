@@ -5,11 +5,11 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Virtualenv à la racine de HBntory_T_T_D
-VENV="$ROOT/venv/bin/activate"
+VENV="$ROOT/.venv/bin/activate"
 
 if [[ ! -f "$VENV" ]]; then
     echo "Virtualenv introuvable : $VENV"
-    echo "Crée-le avec : python3 -m venv venv"
+    echo "Crée-le avec : python3 -m venv .venv"
     exit 1
 fi
 
