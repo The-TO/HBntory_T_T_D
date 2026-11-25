@@ -13,13 +13,15 @@ if [[ ! -f "$VENV" ]]; then
     exit 1
 fi
 
-# 1. API produits via Docker Compose
+# 1. Initialisation de la base de données du backoffice (bloquant)
+#    Si init_db.py échoue, set -e arrête le script avant de lancer quoi que ce soit.
+echo "Initialisation de la base de données..."
+(cd "$ROOT/backoffice" && source "$VENV" && python3 init_db.py)
+echo "Base de données initialisée."
+
+# 2. API produits via Docker Compose
 (cd "$ROOT/../hbntory-products-api" && docker compose up) &
 DOCKER_PID=$!
-
-# 2. Initialisation de la base de données du backoffice
-(cd "$ROOT/backoffice" && source "$VENV" && python3 init_db.py) &
-INIT_DB_PID=$!
 
 # 3. API IA : port 5003
 (cd "$ROOT/ai_service" && source "$VENV" && python3 api.py) &
@@ -33,13 +35,13 @@ WEB_PID=$!
 (cd "$ROOT/backoffice" && source "$VENV" && python3 app.py) &
 BACKOFFICE_PID=$!
 
-trap 'kill $DOCKER_PID $INIT_DB_PID $AI_PID $WEB_PID $BACKOFFICE_PID 2>/dev/null; wait' EXIT INT TERM
+trap 'kill $DOCKER_PID $AI_PID $WEB_PID $BACKOFFICE_PID 2>/dev/null; wait' EXIT INT TERM
 
 echo "Tous les services sont lancés en parallèle."
 echo "Docker Compose : démarré"
 echo "AI service : http://127.0.0.1:5003"
 echo "Web client : http://127.0.0.1:8080"
 echo "Backoffice : http://127.0.0.1:5002"
-echo "Ctrl+C pour arrêter les cinq services."
+echo "Ctrl+C pour arrêter les quatre services."
 
 wait
