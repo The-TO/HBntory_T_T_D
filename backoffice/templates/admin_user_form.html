@@ -1,5 +1,15 @@
-{% block title %}{{ "Edit user" if user else "Create user" }} - HBntory{% endblock %}
-{% block content %}
+<!doctype html>
+<meta charset="utf-8">
+<title>HBntory – {{ "Edit user" if user else "Create user" }}</title>
+<style>
+  .error {
+    color: red;
+  }
+
+  .success {
+    color: green;
+  }
+</style>
 <h1>{{ "Edit user: " + user.username if user else "Create a user" }}</h1>
 <form method="post" action="{{ url_for('logout') }}">
   <button type="submit">Log out</button>
@@ -31,4 +41,3 @@
   <button type="submit">Save</button>
   <a href="{{ url_for('admin.users') }}">Cancel</a>
 </form>
-{% endblock %}

@@ -1,5 +1,15 @@
-{% block title %}Users - HBntory{% endblock %}
-{% block content %}
+<!doctype html>
+<meta charset="utf-8">
+<title>HBntory – Users</title>
+<style>
+  .error {
+    color: red;
+  }
+
+  .success {
+    color: green;
+  }
+</style>
 <h1>Users</h1>
 <form method="post" action="{{ url_for('logout') }}">
   <button type="submit">Log out</button>
@@ -40,4 +50,3 @@
     {% endfor %}
   </tbody>
 </table>
-{% endblock %}
