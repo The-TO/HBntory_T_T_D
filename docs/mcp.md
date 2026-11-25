@@ -93,7 +93,7 @@ Every tool returns the same structure when something goes wrong:
 
 | Error code | When |
 | --- | --- |
-| `invalid_input` | A required input is empty, the shopping list is empty, or an item has no SKU or a quantity lower than 1. |
+| `invalid_input` | A required input is empty, the shopping list is empty, or an item has no SKU, a quantity lower than 1, or a quantity that is not a whole number (such as `2.9`). |
 | `product_not_found` | `get_product` or `get_product_stock`: no product matches the text, or several products match it. |
 | `unknown_product` | `check_shopping_list`: none of the items was found. |
 | `product_api_unavailable` | The Product API cannot be reached (connection refused or timeout), or it answered with an unexpected status. The message tells the two situations apart. |
@@ -120,7 +120,6 @@ Limits:
 
 - If an argument has the wrong type (for example a list of texts instead of a list of objects), the MCP library refuses the call with its own technical error.
 - A successful answer of the Product API with an unexpected content is not handled.
-- A quantity with decimals such as `2.9` is cut to `2`.
 
 The server must never use `print()`. With the stdio transport, standard output carries the MCP messages, and a `print` would break the communication.
 
@@ -139,7 +138,7 @@ python3 test_client.py
 
 The Product API must be running and the database must exist (see the README).
 
-The tables below were checked on 25/11/2026 on a freshly initialized database, by calling the tools through MCP. The script in the repository only contains some of the product calls for now.
+The tables below were checked on 25/11/2026 on a freshly initialized database, by calling the tools through MCP. The script in the repository runs all the calls of these tables, except the two that need a change of environment (Product API stopped, database missing), and checks each result automatically (✅ or ❌).
 
 ### Product tools
 
@@ -169,6 +168,7 @@ The tables below were checked on 25/11/2026 on a freshly initialized database, b
 | One unknown product | 2 × "Flying Carpet", 1 × `HB-MON-2102` | ✅ `unknown_products`, plan for the monitor |
 | Only unknown products | 2 × "Flying Carpet" | ✅ `unknown_product` |
 | Invalid quantity | quantity `0` | ✅ `invalid_input` |
+| Quantity with decimals | quantity `2.9` | `invalid_input` (added to `test_client.py`, not run yet) |
 | Database missing | stock tools with `HBNTORY_DB=/tmp/nothing.db` | ✅ `database_unavailable` |
 | Product API stopped | `get_branch_stock(branch="North Campus")` | ✅ quantities with `"name": null` |
 
