@@ -243,6 +243,29 @@ def get_branch_stock(branch: str) -> dict:
     return {"ok": True, "branch": match[1], "products": products}
 
 
+def parse_quantity(value):
+    """Turn a quantity into a whole number, or return None if it is not one.
+
+    Accepted: 2, 2.0, "2", "2.0". Refused (None): 2.9, "2.9", True, None,
+    text, nan, inf. A quantity is never rounded or truncated silently.
+    """
+    if isinstance(value, bool):  # True would otherwise count as 1
+        return None
+    if isinstance(value, str):
+        try:
+            return int(value.strip())
+        except ValueError:
+            try:
+                value = float(value.strip())
+            except ValueError:
+                return None
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float) and value.is_integer():
+        return int(value)
+    return None
+
+
 @mcp.tool()
 def check_shopping_list(items: list[dict]) -> dict:
     """Find which branch(es) to visit to buy a shopping list.
@@ -264,10 +287,14 @@ def check_shopping_list(items: list[dict]) -> dict:
     for item in items:
         try:
             text = str(item.get("sku", "")).strip()
-            quantity = int(item.get("quantity"))
-        except (AttributeError, TypeError, ValueError):
+            quantity = parse_quantity(item.get("quantity"))
+        except AttributeError:  # the item is not an object
             return error("invalid_input",
                          "Each item needs a 'sku' and a whole 'quantity'.")
+        if quantity is None:
+            return error("invalid_input",
+                         "The quantity must be a whole number (for example 2, "
+                         "not 2.9).")
         if not text or quantity <= 0:
             return error("invalid_input",
                          "Each item needs a SKU and a quantity greater than zero.")
