@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>HBntory - Ask about our product</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <main>
+        <h1>HBntory assistant</h1>
+        <p> Ask a question about our products and the stock of our branches</p>
+
+        <form id="ask-form">
+            <label for="question">Your question</label>
+            <input type="text" id="question" maxlength="500" required
+                placeholder="Wich branch has the Wireless Mouse in stock">
+            <button type="submit" id="send">Ask</button>
+        </form>
+        <p id="status" role="status" aria-live="polite"></p>
+        <section id="answer" aria-live="polite" hidden></section>
+
+        <h2>Examples</h2>
+        <ul id="examples">
+            <li><button type="button">Give me details about the Holberton Student Laptop 14</button></li>
+            <li><button type="button">Which branch has the 24 inch Compact Monitor in stock?</button></li>
+            <li><button type="button">What products can I find in Main Campus?</button></li>
+            <li><button type="button">I want 2 Breadboard Pack and 1 Compact Student Desk. Which branches should I visit?</button></li>
+        </ul>
+    </main>
+    <script src="app.js"></script>
+</body>
+</html>
