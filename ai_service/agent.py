@@ -98,6 +98,15 @@ def tool_error(code, message):
     return json.dumps({"ok": False, "error": code, "message": message})
 
 
+def result_text(result):
+    """Le premier texte du résultat d'un tool ('' s'il n'y en a pas)."""
+    for block in result.content:
+        text = getattr(block, "text", None)
+        if text:
+            return text
+    return ""
+
+
 async def run_tool(session, name, arguments, tool_names):
     """Exécute un tool sur le serveur MCP. Renvoie toujours un texte : en
     cas de problème, une erreur que le modèle pourra expliquer."""
@@ -108,8 +117,18 @@ async def run_tool(session, name, arguments, tool_names):
     else:
         try:
             result = await session.call_tool(name, arguments)
-            text = result.content[0].text
-        except Exception:
+            text = result_text(result)
+            if result.isError or not text:
+                # Le serveur MCP signale une erreur (exception dans le tool,
+                # arguments refusés...) ou ne renvoie rien. Ce texte n'est
+                # pas au format {"ok": false, ...} : il va dans le terminal,
+                # pas au modèle.
+                print("TOOL ERROR", text[:200])
+                text = None
+        except Exception as error:
+            print("TOOL CALL FAILED", repr(error))
+            text = None
+        if text is None:
             text = tool_error("tool_call_failed",
                               "The tool could not be called. Information "
                               "is unavailable right now.")
