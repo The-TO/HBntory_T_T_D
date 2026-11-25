@@ -13,15 +13,19 @@ if [[ ! -f "$VENV" ]]; then
     exit 1
 fi
 
-# 1. Initialisation de la base de données du backoffice (bloquant)
+# 1. API produits via Docker Compose
+(cd "$ROOT/../hbntory-products-api" && docker compose up) &
+DOCKER_PID=$!
+trap 'kill $DOCKER_PID ${AI_PID:-} ${WEB_PID:-} ${BACKOFFICE_PID:-} 2>/dev/null || true; wait' EXIT INT TERM
+
+# On attend que la Product API réponde
+until curl -sf http://localhost:5001/health > /dev/null; do sleep 1; done
+
+# 2. Initialisation de la base de données du backoffice (bloquant)
 #    Si init_db.py échoue, set -e arrête le script avant de lancer quoi que ce soit.
 echo "Initialisation de la base de données..."
 (cd "$ROOT/backoffice" && source "$VENV" && python3 init_db.py)
 echo "Base de données initialisée."
-
-# 2. API produits via Docker Compose
-(cd "$ROOT/../hbntory-products-api" && docker compose up) &
-DOCKER_PID=$!
 
 # 3. API IA : port 5003
 (cd "$ROOT/ai_service" && source "$VENV" && python3 api.py) &
@@ -35,7 +39,6 @@ WEB_PID=$!
 (cd "$ROOT/backoffice" && source "$VENV" && python3 app.py) &
 BACKOFFICE_PID=$!
 
-trap 'kill $DOCKER_PID $AI_PID $WEB_PID $BACKOFFICE_PID 2>/dev/null; wait' EXIT INT TERM
 
 echo "Tous les services sont lancés en parallèle."
 echo "Docker Compose : démarré"

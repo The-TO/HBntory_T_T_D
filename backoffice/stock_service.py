@@ -35,8 +35,8 @@ def _check_branch(branch_id):
     return branch
 
 
-def _check_product(product_id):
-    """Vérifie que le produit existe dans la Product API.
+def _clean_product_id(product_id):
+    """Vérifie que l'identifiant saisi ressemble à un SKU et le met en forme.
     """
     product_id = (product_id or "").strip().upper()
     if not product_id:
@@ -45,6 +45,15 @@ def _check_product(product_id):
         raise StockError(
             "Invalid product identifier: use only letters, digits and hyphens."
         )
+    if product_id.isdigit():
+        raise StockError("Use the product SKU (for example HB-LAP-1001), not its number.")
+    return product_id
+
+
+def _check_product(product_id):
+    """Vérifie que le produit existe dans la Product API.
+    """
+    product_id = _clean_product_id(product_id)
     try:
         product = product_client.get_product(product_id)
     except product_client.ProductNotFound:
@@ -110,5 +119,5 @@ def list_stock(branch_id):
 def get_quantity(branch_id, product_id):
     """Get the quantity of a product held by a branch.
     """
-    item = _find(branch_id, (product_id or "").strip().upper())
+    item = _find(branch_id, _clean_product_id(product_id))
     return item.quantity if item else 0

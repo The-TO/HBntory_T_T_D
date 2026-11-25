@@ -65,10 +65,10 @@ def quantity():
     """
     branch_id = permissions.current_branch_id()
     product_id = (request.args.get("product_id") or "").strip().upper()
-    if not product_id:
-        flash("Product id is required.", "error")
-    else:
+    try:
         amount = stock_service.get_quantity(branch_id, product_id)
         flash("%s: %d in stock." % (product_id, amount))
+    except stock_service.StockError as error:
+        flash(str(error), "error")
 
     return redirect(url_for("stock.index"))

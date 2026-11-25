@@ -42,10 +42,12 @@ Validation is placed in **two layers**.
 
 **1. Business layer (`backoffice/stock_service.py`).** Every stock change goes through `add_stock` and `remove_stock`, which check, in this order:
 
-1. the quantity is a whole number strictly greater than zero;
+1. the quantity is a whole number between 1 and 999 (maximum for one operation);
 2. the branch exists;
-3. the product exists in the Product API (when adding stock);
-4. there is enough stock (when removing stock).
+3. when adding stock, the product identifier is a SKU (letters, digits and hyphens, not a number alone) and the product exists in the Product API;
+4. when removing stock, there is enough stock.
+
+Checking a quantity (`get_quantity`) refuses an identifier that does not look like a SKU, in the same way.
 
 If a rule fails, nothing is modified and a clear error message is returned.
 

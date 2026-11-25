@@ -36,7 +36,6 @@ The Backoffice builds its pages on the server, so the browser sends the cookie b
 
 ## Known limitations
 
-- Changing a password does not close the sessions that are already open.
 - Expired sessions stay in the table.
 - There is no limit on the number of login attempts.
 - Forms have no CSRF token. `SameSite=Lax` reduces the risk.

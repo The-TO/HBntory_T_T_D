@@ -129,7 +129,7 @@ We only expose what the supported questions need: no price, supplier or category
 
 ## Manual tests
 
-`product_mcp_server/test_client.py` starts the server, lists its tools and calls the product tools:
+`product_mcp_server/test_client.py` starts the server, lists its tools and calls the product tools and the stock tools:
 
 ```bash
 cd product_mcp_server
@@ -168,7 +168,7 @@ The tables below were checked on 25/11/2026 on a freshly initialized database, b
 | One unknown product | 2 × "Flying Carpet", 1 × `HB-MON-2102` | ✅ `unknown_products`, plan for the monitor |
 | Only unknown products | 2 × "Flying Carpet" | ✅ `unknown_product` |
 | Invalid quantity | quantity `0` | ✅ `invalid_input` |
-| Quantity with decimals | quantity `2.9` | `invalid_input` (added to `test_client.py`, not run yet) |
+| Quantity with decimals | quantity `2.9` | ✅ `invalid_input` |
 | Database missing | stock tools with `HBNTORY_DB=/tmp/nothing.db` | ✅ `database_unavailable` |
 | Product API stopped | `get_branch_stock(branch="North Campus")` | ✅ quantities with `"name": null` |
 
