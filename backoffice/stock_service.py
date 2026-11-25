@@ -50,6 +50,8 @@ def _check_product(product_id):
         raise StockError(
             "Product API unavailable: cannot check the product right now."
         )
+    if product["sku"] != product_id:
+        raise StockError("Use the product SKU (for example HB-LAP-1001), not his number.")
     return product["sku"]
 
 
