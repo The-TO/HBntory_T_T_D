@@ -3,6 +3,7 @@ from db import db_session
 from models import Branch, Stock
 import product_client
 
+MAX_QUANTITY = 999
 
 class StockError(Exception):
     """Opération de stock refusée (le message est affichable).
@@ -20,6 +21,8 @@ def parse_quantity(value):
         raise StockError("Quantity must be a whole number.")
     if quantity <= 0:
         raise StockError("Quantity must be greater than zero.")
+    if quantity > MAX_QUANTITY:
+        raise StockError("Quantity cannot be greater than %d." % MAX_QUANTITY)
     return quantity
 
 
