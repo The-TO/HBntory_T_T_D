@@ -5,7 +5,7 @@ users. These operations are intended for administrators.
 """
 
 from db import db_session
-from models import Branch, User, ROLE_COMMON
+from models import Branch, User, ROLE_COMMON, UserSession
 from security import hash_password
 from datetime import datetime, timezone
 
@@ -78,6 +78,9 @@ def update_user(user_id, branch_id, new_password=""):
     if new_password:  # champ vide = on garde l'ancien mot de passe
         _check_password(new_password)
         user.password_hash = hash_password(new_password)
+        # hotfix pour le changement de mot de de passe;
+        # la personne n'etait pas déconnecté lors du changement.
+        db_session.query(UserSession).filter(UserSession.user_id == user.id).delete()
     db_session.commit()
     return user
 
