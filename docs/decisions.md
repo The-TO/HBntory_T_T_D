@@ -100,7 +100,7 @@ The stock page shows the product names next to the SKUs and suggests products wh
 - After each POST the route redirects to the stock page, so refreshing the page does not repeat the action. The result (success or error such as invalid quantity, unknown product, not enough stock, Product API unavailable) is shown with a flash message, using only server-side templates.
 
 **Trade-off:**
-- The page reloads after each action, and products are entered as a SKU: there are no product names or selector yet.
+- The page reloads after each action.
 
 ## Product API Integration in the Backoffice
 
@@ -138,3 +138,20 @@ The stock page shows the product names next to the SKUs and suggests products wh
 3. Log in as a common user and open `/stock/`. Check that the table shows a Name column and that the SKU fields suggest products.
 4. Stop the Product API and reload `/stock/`. The page should still load, with a warning and `-` in the Name column.
 5. Run `pytest -v` from `backoffice/` for the automatic tests.
+
+## AI model: a local model with Ollama (`qwen3:8b`)
+
+**Benefits:**
+- It runs on our own machines: no API key, no cost per question, and the questions are not sent to an external service.
+- It can call tools, which is what our agent needs. Another model can be used with the `AI_MODEL` environment variable.
+
+**Trade-off:**
+- It needs enough memory (a graphics card helps), answers can be slow, and a small model sometimes picks the wrong tool or adds information. This is why several checks are done in Python.
+
+## Assistant tools accept product names
+
+**Benefits:**
+- In our tests with a small model (`llama3.1:8b`), the model sometimes invented a SKU instead of searching for it, then told the customer that the product did not exist. The tools now find the product from its name in Python, so the model only has to copy what the customer wrote.
+
+**Trade-off:**
+- A vague name such as "monitor" matches several products: the tool returns an error that lists them. Names are compared word by word, so a spelling mistake is not found.

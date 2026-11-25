@@ -1,4 +1,0 @@
-mcp[cli]<2
-requests
-pytest
-Flask

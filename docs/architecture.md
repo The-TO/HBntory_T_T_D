@@ -5,7 +5,7 @@
 
 - Backoffice → Flask app for employees queries
 - AI Service → Receive user’s question, ask to AI Model and returns the answer
-- AI Model → Understand questions, execute MCP Tools and return answers
+- AI Model → Understand questions, choose which MCP tools are needed and write the answers (the AI Service runs the tools)
 - MCP Server → Receive AI service calls and request data from the Product API and Database
 - Product API → Read-Only data source on docker
 - Database → SQLite relational database with users, branches and stock quantities (no product details)
@@ -53,6 +53,7 @@
   - `get_product_stock` → the stock of one product in every branch
   - `get_branch_stock` → all the products in stock in one branch
   - `check_shopping_list` → checks if a list of products can be bought, and in which branches
+- `get_product`, `get_product_stock` and `check_shopping_list` accept a SKU or a product name
 - The MCP Server reads the database with read-only SQL, and the AI Service starts it as a subprocess (stdio)
 - Answers must only use the tool results: if the information is not available, the answer says so
 
@@ -63,7 +64,7 @@
 ```mermaid
 flowchart LR
     Staff([Staff: admin / common user]) -->|HTTP + session cookie| BO[Backoffice<br>Flask + Jinja :5002]
-    Visitor([Anonymous visitor]) --> CW[Client Web Interface<br>HTML + JS]
+    Visitor([Anonymous visitor]) --> CW[Client Web Interface<br>HTML + JS :8080]
     CW -->|REST: POST /api/ai/query| AI[AI Query Service<br>Flask + agent :5003]
     AI -->|MCP over stdio| MCP[Product MCP Server]
     AI -->|HTTP| LLM[Ollama<br>local model qwen3:8b]
@@ -73,7 +74,7 @@ flowchart LR
     MCP -->|HTTP GET| API
 ```
 
-## User diagram
+## Class diagram
 
 ```mermaid
 classDiagram

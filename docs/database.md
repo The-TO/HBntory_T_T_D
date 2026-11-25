@@ -5,11 +5,13 @@
 - **branches**: id, name, created_at
 - **users**: id, username, password_hash, role, branch_id, created_at, deleted_at
 - **stock**: id, branch_id, product_id, quantity, updated_at
+- **user_sessions**: id, token_hash, user_id, created_at, expires_at
 
 ## Database Relations
 
 - branches (1) ────< users (0..*)
 - branches (1) ────< stock (0..*)
+- users (1) ────< user_sessions (0..*)
 - stock (*) ────> product_id (reference to the Product API, no local foreign key)
 
 ## Database Rules
@@ -22,6 +24,7 @@
 - `product_id` is the **SKU** of the product in the Product API.
 - Stock quantity is always >= 0.
 - Product details (name, description, price, images, metadata) are not stored here, only in the Product API.
+- A login session belongs to one user and expires after 8 hours. Only the hash of the session token is stored.
 
 ## Field Justification
 
@@ -31,6 +34,7 @@
 - `role`: distinguishes the admin from common users (`admin` or `common`).
 - `password_hash`: stores the hashed password, never the plain text.
 - `product_id`: the SKU of the product in the Product API, the only link between our database and the product data.
+- `token_hash` and `expires_at` (sessions): used by the Backoffice login, see `auth.md`.
 
 ## Stock Validation Rules
 
@@ -51,7 +55,7 @@ If a rule fails, nothing is modified and a clear error message is returned.
 
 - `CHECK (quantity >= 0)`: stock can never be negative.
 - `UNIQUE (branch_id, product_id)`: one stock line per branch and product.
-- Foreign keys: stock and users must reference an existing branch.
+- Foreign keys: stock and users must reference an existing branch, and a session an existing user.
 - `CHECK` on users: an admin has no branch, a common user has one.
 
 *Why here:* it is the last safety net. Even if the code has a bug, the database refuses invalid data.
@@ -72,6 +76,7 @@ The script `backoffice/init_db.py` (run from the `backoffice/` folder) creates t
 erDiagram
    BRANCHES |o--o{ USERS : "has (except admin)"
    BRANCHES ||--o{ STOCK : holds
+   USERS ||--o{ USER_SESSIONS : opens
    BRANCHES {
        int id PK
        string name UK "Name of branch"
@@ -92,5 +97,12 @@ erDiagram
        string product_id "SKU from the Product API, unique with branch_id"
        int quantity ">= 0"
        datetime updated_at "Last update"
+   }
+   USER_SESSIONS {
+       int id PK
+       string token_hash UK "SHA-256 of the session token"
+       int user_id FK "Which user"
+       datetime created_at "Creation date"
+       datetime expires_at "8 hours after login"
    }
 ```

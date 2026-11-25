@@ -46,5 +46,5 @@ The branch is never read from the URL or from a form. A common user therefore ca
 
 ## Known limitations
 
-- Each route must call `require_role` or `current_branch_id` by hand. Forgetting it leaves the route open, so every new route is tested for the anonymous case.
+- Each route must call `require_role` or `current_branch_id` by hand. Forgetting it leaves the route open. The automatic tests check these functions on test routes, not on every real page, so a new route has to be checked by hand.
 - Permissions are role-based and branch-based only, there is no finer per-object permission.
